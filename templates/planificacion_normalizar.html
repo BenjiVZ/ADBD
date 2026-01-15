@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Normalizar Planificación</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px 48px 24px;
+        }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 48px;
+            box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
+        }
+        .nav { 
+            display: flex; 
+            gap: 32px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav a { 
+            color: #2c2c2c;
+            text-decoration: none; 
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav a:hover { 
+            color: #dc0000;
+            border-bottom-color: #dc0000;
+        }
+        h1 {
+            font-size: 42px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-bottom: 32px;
+            letter-spacing: -0.5px;
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: 400;
+            color: #dc0000;
+            margin: 40px 0 20px 0;
+        }
+        .summary { 
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        .card { 
+            background: #fafafa;
+            padding: 20px;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            border-color: #dc0000;
+            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.1);
+        }
+        .card strong {
+            display: block;
+            font-size: 28px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-top: 8px;
+        }
+        .filter-form {
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .filter-group label {
+            font-weight: 500;
+            font-size: 14px;
+            color: #2c2c2c;
+        }
+        .filter-group select {
+            padding: 12px 14px;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #ffffff;
+            min-width: 200px;
+        }
+        .btn { 
+            padding: 12px 24px;
+            background: #dc0000;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #b80000;
+            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.2);
+        }
+        .btn:disabled { 
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #2c2c2c;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .btn-secondary:hover {
+            background: #1a1a1a;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+        .info-card {
+            background: #f1f8f4;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .info-card div {
+            margin-bottom: 8px;
+        }
+        .error { color: #dc0000; font-weight: 500; }
+        .ok { color: #4caf50; font-weight: 500; }
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td { 
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 14px;
+        }
+        th { 
+            background: #fafafa;
+            font-weight: 500;
+            color: #2c2c2c;
+            border-bottom: 2px solid #e8e8e8;
+        }
+        td {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover {
+            background: #fafafa;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav class="nav">
+                <a href="/">Inicio</a>
+                <a href="/planificacion/normalizar/">Normalizar Planificación</a>
+                <a href="/salidas/normalizar/">Normalizar Salidas</a>
+                <a href="/tablero/normalizado/">Tablero</a>
+            </nav>
+        </div>
+    </header>
+    <div class="container">
+        <h1>Normalizar planificación</h1>
+
+        <div class="summary">
+            <div class="card">Pendientes<strong>{{ summary.pending }}</strong></div>
+            <div class="card">Normalizados<strong>{{ summary.ok }}</strong></div>
+            <div class="card">Con error<strong>{{ summary.error }}</strong></div>
+            <div class="card">Total crudos<strong>{{ summary.total }}</strong></div>
+        </div>
+
+        <div class="filter-form">
+            <form method="get" style="display: flex; gap: 16px; align-items: end; flex: 1;">
+                <div class="filter-group">
+                    <label for="plan_month">Mes</label>
+                    <select id="plan_month" name="plan_month" {% if not months %}disabled{% endif %}>
+                        {% for m in months %}
+                            <option value="{{ m|date:'Y-m-d' }}" {% if m == selected_month %}selected{% endif %}>{{ m|date:'Y-m' }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="btn" type="submit">Ver</button>
+            </form>
+        </div>
+
+        {% if not months %}
+            <div class="card">No hay planificaciones cargadas.</div>
+        {% elif selected_month %}
+            <div class="card">Normalizando mes: <strong>{{ selected_month }}</strong></div>
+        {% endif %}
+
+        <div class="actions">
+            <form method="post" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="plan_month" value="{{ selected_month }}" />
+                <button class="btn" type="submit" {% if summary.pending == 0 and summary.error == 0 %}disabled{% endif %}>
+                    Normalizar pendientes
+                </button>
+            </form>
+            {% if summary.error > 0 %}
+            <a href="/planificacion/errores/" class="btn btn-secondary">
+                Resolver {{ summary.error }} errores
+            </a>
+            {% endif %}
+        </div>
+
+        {% if ran %}
+        <div class="info-card">
+            <div>Procesados: <strong>{{ run_result.processed }}</strong></div>
+            <div class="ok">Creados: {{ run_result.created }}</div>
+            <div class="ok">Actualizados: {{ run_result.updated }}</div>
+            <div class="error">Errores: {{ run_result.errors }}</div>
+        </div>
+        {% endif %}
+
+        <h2>Pendientes recientes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>ItemCode</th>
+                    <th>ItemName</th>
+                    <th>Sucursal texto</th>
+                    <th>Origen</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in pending %}
+                <tr>
+                    <td>{{ r.plan_month }}</td>
+                    <td>{{ r.item_code }}</td>
+                    <td>{{ r.item_name }}</td>
+                    <td>{{ r.sucursal }}</td>
+                    <td>{{ r.cendis }}</td>
+                    <td>{{ r.normalize_status }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6">Sin pendientes.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Errores recientes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>ItemCode</th>
+                    <th>Sucursal texto</th>
+                    <th>Producto</th>
+                    <th>Notas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in errors %}
+                <tr>
+                    <td>{{ r.plan_month }}</td>
+                    <td>{{ r.item_code }}</td>
+                    <td>{{ r.sucursal }}</td>
+                    <td>{{ r.item_name }}</td>
+                    <td class="error">{{ r.normalize_notes }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5">Sin errores.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

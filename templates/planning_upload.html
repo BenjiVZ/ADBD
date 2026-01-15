@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Planificación</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px 48px 24px;
+        }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 48px;
+            box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
+        }
+        .nav { 
+            display: flex; 
+            gap: 32px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav a { 
+            color: #2c2c2c;
+            text-decoration: none; 
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav a:hover { 
+            color: #dc0000;
+            border-bottom-color: #dc0000;
+        }
+        h1 { 
+            font-size: 42px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: 400;
+            color: #dc0000;
+            margin: 32px 0 20px 0;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #5a5a5a;
+            margin-bottom: 32px;
+        }
+        .card { 
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 32px;
+            max-width: 800px;
+        }
+        form label {
+            display: block;
+            font-weight: 500;
+            color: #2c2c2c;
+            margin-bottom: 8px;
+            margin-top: 16px;
+        }
+        form label:first-of-type {
+            margin-top: 0;
+        }
+        input[type="date"],
+        input[type="text"],
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #ffffff;
+        }
+        input[type="date"]:focus,
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #dc0000;
+            box-shadow: 0 0 0 3px rgba(220, 0, 0, 0.1);
+        }
+        input[type="file"] {
+            padding: 10px;
+            cursor: pointer;
+        }
+        button {
+            background: #dc0000;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            margin-right: 12px;
+        }
+        button:hover {
+            background: #b80000;
+            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.2);
+        }
+        .note {
+            font-size: 13px;
+            color: #5a5a5a;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .error { 
+            color: #dc0000;
+            background: #ffebee;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+        .error div {
+            margin-bottom: 4px;
+        }
+        .error div:last-child {
+            margin-bottom: 0;
+        }
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 16px;
+        }
+        th, td { 
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 14px;
+        }
+        th { 
+            background: #fafafa;
+            font-weight: 500;
+            color: #2c2c2c;
+            border-bottom: 2px solid #e8e8e8;
+        }
+        td {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover {
+            background: #fafafa;
+        }
+        .summary { 
+            margin-top: 32px;
+        }
+        .summary p {
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+        .summary strong {
+            color: #dc0000;
+        }
+        .pill { 
+            display: inline-block;
+            background: #fafafa;
+            border: 1px solid #e8e8e8;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin: 4px 6px 4px 0;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav class="nav">
+                <a href="/">Inicio</a>
+                <a href="/subidas/">Subir archivos</a>
+                <a href="/planificacion/">Planificación</a>
+            </nav>
+        </div>
+    </header>
+    <div class="container">
+        <h1>Planificación por fecha</h1>
+        <p class="subtitle">Define la fecha, sube el Excel y elige la hoja con la información. Se creará un lote por fecha y hoja.</p>
+
+    <div class="card" id="upload">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="plan_date">Fecha de planificación:</label><br />
+            <input type="date" id="plan_date" name="plan_date" value="{{ plan_date|default:'' }}" required />
+            <br /><br />
+            <label for="sheet_name">Hoja a usar:</label><br />
+            {% if sheet_names %}
+                <select id="sheet_name" name="sheet_name">
+                    {% for name in sheet_names %}
+                        <option value="{{ name }}" {% if name == selected_sheet %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+                <div style="font-size: 12px; color: #555; margin-top: 4px;">Selecciona la hoja y vuelve a enviar para usarla.</div>
+            {% else %}
+                <input type="text" id="sheet_name" name="sheet_name" value="{{ selected_sheet|default:'' }}" placeholder="Si la hoja no es la primera, escribe su nombre exacto" />
+            {% endif %}
+            <br /><br />
+            <label for="file">Archivo Excel (.xlsx):</label><br />
+            <input type="file" id="file" name="file" accept=".xlsx" required />
+            <br /><br />
+            <button type="submit" name="step" value="preview">Previsualizar</button>
+            <button type="submit" name="step" value="import">Importar hoja seleccionada</button>
+            <div style="font-size: 12px; color: #555; margin-top: 4px;">Nota: el navegador no conserva el archivo entre envíos; selecciónalo de nuevo si cambias de hoja antes de importar.</div>
+        </form>
+        {% if errors %}
+            <div class="error">
+                {% for err in errors %}
+                    <div>{{ err }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {% if summary %}
+        <div class="summary">
+            <h2>Resultado</h2>
+            <p>Archivo: <strong>{{ summary.filename }}</strong></p>
+            <p>Hojas encontradas ({{ summary.sheet_count }}):
+                {% for name in summary.sheet_names %}
+                    <span class="pill">{{ name }}</span>
+                {% endfor %}
+            </p>
+            <p>Hoja usada: <strong>{{ summary.sheet_name }}</strong> · Lote ID: <strong>{{ summary.batch_id }}</strong></p>
+            <p>Filas creadas: <strong>{{ summary.created_entries }}</strong> · Filas vacías u omitidas: <strong>{{ summary.skipped_rows }}</strong></p>
+        </div>
+    {% endif %}
+
+    {% if preview_headers %}
+        <div class="summary">
+            <h2>Previsualización (primeras 10 filas)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        {% for h in preview_headers %}<th>{{ h }}</th>{% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in preview_rows %}
+                        <tr>
+                            {% for cell in row %}<td>{{ cell }}</td>{% endfor %}
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="{{ preview_headers|length }}">Sin datos</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</body>
+</html>

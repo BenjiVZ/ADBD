@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tablero Normalizado - Análisis de Cumplimiento</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px 48px 24px;
+        }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 48px;
+            box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        h1 { 
+            font-size: 42px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-bottom: 32px;
+            letter-spacing: -0.5px;
+        }
+        .nav { 
+            display: flex; 
+            gap: 32px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav a { 
+            color: #2c2c2c;
+            text-decoration: none; 
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav a:hover { 
+            color: #dc0000;
+            border-bottom-color: #dc0000;
+        }
+        .card { 
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .filter-group label {
+            font-weight: 500;
+            color: #2c2c2c;
+            font-size: 14px;
+        }
+        .filter-group input,
+        .filter-group select {
+            padding: 12px 14px;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #ffffff;
+        }
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #dc0000;
+            box-shadow: 0 0 0 3px rgba(220, 0, 0, 0.1);
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: #dc0000;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #b80000;
+            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.2);
+        }
+        .btn-secondary {
+            background: #2c2c2c;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #1a1a1a;
+        }
+        .summary {
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .summary-card {
+            background: #fafafa;
+            color: #2c2c2c;
+            padding: 24px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e8e8e8;
+            transition: all 0.3s ease;
+        }
+        .summary-card:hover {
+            border-color: #dc0000;
+            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.1);
+        }
+        .summary-card.success {
+            background: #f1f8f4;
+            border-color: #4caf50;
+        }
+        .summary-card.warning {
+            background: #fff5f5;
+            border-color: #dc0000;
+        }
+        .summary-label {
+            font-size: 13px;
+            color: #5a5a5a;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .summary-value {
+            font-size: 32px;
+            font-weight: 300;
+            color: #dc0000;
+        }
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin-top: 16px; 
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td { 
+            padding: 12px 16px;
+            font-size: 14px;
+        }
+        th { 
+            background: #fafafa;
+            text-align: center; 
+            font-weight: 500;
+            color: #2c2c2c;
+            border-bottom: 2px solid #e8e8e8;
+        }
+        .header { 
+            background: #dc0000;
+            color: #fff; 
+            font-weight: 500;
+            text-align: center;
+            font-size: 16px;
+        }
+        .dest-row { 
+            background: #f5f5f5;
+            font-weight: 500;
+            text-align: left;
+            color: #2c2c2c;
+        }
+        .group-name {
+            text-align: left !important;
+            font-weight: 400;
+            padding-left: 32px !important;
+        }
+        .status-completo { background: #e8f5e9 !important; color: #2e7d32; font-weight: 500; }
+        .status-alto { background: #fff9c4 !important; color: #f57f17; font-weight: 500; }
+        .status-medio { background: #ffebee !important; color: #d84315; font-weight: 500; }
+        .status-bajo { background: #ffcdd2 !important; color: #c62828; font-weight: 500; }
+        .status-sin_entregas { background: #fafafa !important; color: #999; font-style: italic; }
+        .status-sin_plan { background: #f3e5f5 !important; color: #6a1b9a; }
+        .muted { 
+            color: #999; 
+            font-size: 13px; 
+            font-style: italic;
+        }
+        .no-data {
+            text-align: center;
+            padding: 48px 24px;
+            color: #999;
+        }
+        .qty {
+            text-align: right !important;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav class="nav">
+                <a href="/">Inicio</a>
+                <a href="/planificacion/normalizar/">Normalizar Planificación</a>
+                <a href="/salidas/normalizar/">Normalizar Salidas</a>
+                <a href="/tablero/normalizado/">Tablero</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Tablero de Cumplimiento de Entregas</h1>
+
+    <div class="card">
+        <form method="get">
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="plan_date">Fecha de Planificación</label>
+                    <select id="plan_date" name="plan_date">
+                        <option value="">Seleccione fecha...</option>
+                        {% for date in plan_dates %}
+                            <option value="{{ date|date:'Y-m-d' }}" {% if plan_date == date %}selected{% endif %}>
+                                {{ date|date:'d/m/Y' }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="salida_date">Fecha de Salidas</label>
+                    <select id="salida_date" name="salida_date">
+                        <option value="">Seleccione fecha...</option>
+                        {% for date in salida_dates %}
+                            <option value="{{ date|date:'Y-m-d' }}" {% if salida_date == date %}selected{% endif %}>
+                                {{ date|date:'d/m/Y' }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="origin">CEDIS Origen</label>
+                    <select id="origin" name="origin">
+                        <option value="">Todos los CEDIS</option>
+                        {% for oid, oname in origin_choices %}
+                            <option value="{{ oid }}" {% if selected_origin == oid %}selected{% endif %}>
+                                {{ oname }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="btn btn-primary">Analizar Cumplimiento</button>
+                <button type="submit" name="export" value="csv" class="btn btn-secondary">Descargar CSV</button>
+            </div>
+        </form>
+    </div>
+
+    {% if plan_date and salida_date %}
+        <div class="card">
+            <h3 style="margin-top: 0; font-size: 24px; font-weight: 400; color: #dc0000; margin-bottom: 24px;">Resumen General</h3>
+            <div class="summary">
+                <div class="summary-card">
+                    <div class="summary-label">Total Planificado</div>
+                    <div class="summary-value">{{ summary.total_plan|floatformat:0 }}</div>
+                </div>
+                <div class="summary-card success">
+                    <div class="summary-label">Total Enviado</div>
+                    <div class="summary-value" style="color: #4caf50;">{{ summary.total_salidas|floatformat:0 }}</div>
+                </div>
+                <div class="summary-card {% if summary.percent_general >= 80 %}success{% else %}warning{% endif %}">
+                    <div class="summary-label">% Cumplimiento</div>
+                    <div class="summary-value" style="color: {% if summary.percent_general >= 80 %}#4caf50{% else %}#dc0000{% endif %};">{{ summary.percent_general|floatformat:1 }}%</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Destinos</div>
+                    <div class="summary-value">{{ summary.total_destinos }}</div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if not plan_date or not salida_date %}
+        <div class="card no-data">
+            <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+            <p style="margin: 0; font-size: 16px; color: #5a5a5a;">
+                Seleccione las fechas de planificación y salidas para visualizar el análisis de cumplimiento.
+            </p>
+        </div>
+    {% elif not table %}
+        <div class="card no-data">
+            <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+            <p style="margin: 0; font-size: 16px; color: #5a5a5a;">
+                No hay datos disponibles para las fechas seleccionadas.
+            </p>
+        </div>
+    {% else %}
+        {% for origen in table %}
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr class="header">
+                            <th colspan="5">{{ origen.origin_name }}</th>
+                        </tr>
+                        <tr>
+                            <th style="text-align: left;">Sucursal Destino</th>
+                            <th style="text-align: left;">Grupo</th>
+                            <th>Planificado</th>
+                            <th>Enviado</th>
+                            <th>% Cumplimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for destino in origen.destinos %}
+                            <tr class="dest-row">
+                                <td colspan="5">{{ destino.name }}</td>
+                            </tr>
+                            {% for grupo in destino.grupos %}
+                                <tr>
+                                    <td></td>
+                                    <td class="group-name">{{ grupo.name }}</td>
+                                    <td class="qty">{{ grupo.plan|floatformat:0 }}</td>
+                                    <td class="qty">{{ grupo.salida|floatformat:0 }}</td>
+                                    <td class="status-{{ grupo.status }}">
+                                        {% if grupo.percent is not None %}
+                                            {{ grupo.percent }}%
+                                        {% else %}
+                                            <span class="muted">Sin plan</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="muted" style="text-align: center;">
+                                    Sin datos para este origen
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card">
+        <h4 style="margin-top: 0; font-size: 18px; font-weight: 500; color: #2c2c2c; margin-bottom: 20px;">Leyenda de Colores</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 24px; height: 24px; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 4px;"></div>
+                <span>≥100% - Completo</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 24px; height: 24px; background: #fff9c4; border: 1px solid #f57f17; border-radius: 4px;"></div>
+                <span>80-99% - Alto</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 24px; height: 24px; background: #ffebee; border: 1px solid #d84315; border-radius: 4px;"></div>
+                <span>50-79% - Medio</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 24px; height: 24px; background: #ffcdd2; border: 1px solid #c62828; border-radius: 4px;"></div>
+                <span>&lt;50% - Bajo</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 24px; height: 24px; background: #fafafa; border: 1px solid #999; border-radius: 4px;"></div>
+                <span>Sin entregas</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 24px; height: 24px; background: #f3e5f5; border: 1px solid #6a1b9a; border-radius: 4px;"></div>
+                <span>Sin plan</span>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+</html>

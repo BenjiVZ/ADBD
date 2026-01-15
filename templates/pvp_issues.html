@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PVP con faltantes y duplicados</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px 48px 24px;
+        }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 48px;
+            box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
+        }
+        .nav { 
+            display: flex; 
+            gap: 32px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav a { 
+            color: #2c2c2c;
+            text-decoration: none; 
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav a:hover { 
+            color: #dc0000;
+            border-bottom-color: #dc0000;
+        }
+        h1 { 
+            font-size: 42px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-bottom: 24px;
+            letter-spacing: -0.5px;
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: 400;
+            color: #dc0000;
+            margin: 40px 0 20px 0;
+        }
+        .summary { 
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+        .badge { 
+            display: inline-block;
+            padding: 8px 16px;
+            background: #fafafa;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        a { 
+            color: #dc0000;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        a:hover { 
+            color: #b80000;
+        }
+        .filters { 
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+        .filters strong {
+            display: block;
+            margin-bottom: 16px;
+            color: #2c2c2c;
+            font-size: 16px;
+        }
+        .filters label { 
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+        .filters button {
+            margin-top: 16px;
+            padding: 12px 24px;
+            background: #dc0000;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .filters button:hover {
+            background: #b80000;
+            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.2);
+        }
+        .filters a {
+            margin-left: 12px;
+            padding: 12px 24px;
+            background: #2c2c2c;
+            color: #fff;
+            border-radius: 6px;
+            display: inline-block;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .filters a:hover {
+            background: #1a1a1a;
+        }
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+        th, td { 
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 14px;
+        }
+        th { 
+            background: #fafafa;
+            font-weight: 500;
+            color: #2c2c2c;
+            border-bottom: 2px solid #e8e8e8;
+        }
+        td {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover {
+            background: #fafafa;
+        }
+        .missing { 
+            color: #dc0000;
+            font-weight: 500;
+        }
+        td .badge {
+            background: #fff5f5;
+            border-color: #dc0000;
+            color: #dc0000;
+            margin-right: 4px;
+            margin-bottom: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav class="nav">
+                <a href="/">Inicio</a>
+                <a href="/subidas/">Subir archivos</a>
+                <a href="/faltantes/">Productos con faltantes</a>
+                <a href="/pvp/faltantes/">PVP con issues</a>
+            </nav>
+        </div>
+    </header>
+    <div class="container">
+        <h1>PVP con faltantes y duplicados</h1>
+        <div class="summary">
+            <span class="badge"><a href="/">Volver a carga</a></span>
+            <span class="badge"><a href="/faltantes/">Productos con faltantes</a></span>
+        </div>
+
+        <form method="get" class="filters">
+            <strong>Ocultar columnas</strong>
+            {% for field in optional_fields %}
+                <label>
+                    <input type="checkbox" name="hide" value="{{ field }}" {% if field in hidden_fields %}checked{% endif %}>
+                    {{ field|capfirst }}
+                </label>
+            {% endfor %}
+            <div>
+                <button type="submit">Aplicar</button>
+                <a href="/pvp/faltantes/">Mostrar todas</a>
+            </div>
+        </form>
+
+        <h2>Faltantes ({{ missing_total }})</h2>
+        <table>
+        <thead>
+            <tr>
+                <th>SKU</th>
+                {% if "description" in visible_fields %}<th>Descripción</th>{% endif %}
+                {% if "price" in visible_fields %}<th>Precio</th>{% endif %}
+                {% if "product" in visible_fields %}<th>Producto</th>{% endif %}
+                <th>Campos faltantes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if missing_rows %}
+                {% for p, missing in missing_rows %}
+                    <tr>
+                        <td>{{ p.sku }}</td>
+                        {% if "description" in visible_fields %}<td class="{% if not p.description %}missing{% endif %}">{{ p.description|default:"(vacío)" }}</td>{% endif %}
+                        {% if "price" in visible_fields %}<td class="{% if p.price is not None and p.price <= 0 %}missing{% endif %}">{{ p.price }}</td>{% endif %}
+                        {% if "product" in visible_fields %}<td class="{% if not p.product %}missing{% endif %}">{% if p.product %}{{ p.product.code }} - {{ p.product.name }}{% else %}(sin producto){% endif %}</td>{% endif %}
+                        <td>
+                            {% if missing %}
+                                {% for f in missing %}
+                                    <span class="badge">{{ f }}</span>
+                                {% endfor %}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="{{ visible_fields|length|add:'2' }}">No hay registros con datos faltantes.</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <h2>Duplicados por SKU ({{ duplicate_groups }})</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>ID</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Producto</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if duplicates %}
+                {% for sku, rows in duplicates.items %}
+                    {% for row in rows %}
+                        <tr>
+                            {% if forloop.first %}
+                                <td rowspan="{{ rows|length }}">{{ sku }}</td>
+                            {% endif %}
+                            <td>{{ row.id }}</td>
+                            <td>{{ row.description }}</td>
+                            <td>{{ row.price }}</td>
+                            <td>{% if row.product %}{{ row.product.code }} - {{ row.product.name }}{% else %}(sin producto){% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="5">No hay duplicados.</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+    </div>
+</body>
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+{% load dict_extras %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Resolver Errores - Planificación</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #222; background: #f5f5f5; }
+        h1 { margin-bottom: 8px; color: #c62828; }
+        .nav { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .nav a { color: #0b6bcb; text-decoration: none; font-weight: 600; }
+        .nav a:hover { text-decoration: underline; }
+        .summary { background: #fff; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #c62828; }
+        .error-group { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .error-group h3 { margin-top: 0; color: #c62828; border-bottom: 2px solid #eee; padding-bottom: 8px; }
+        .error-item { background: #f9f9f9; padding: 16px; margin-bottom: 16px; border-radius: 6px; border-left: 3px solid #ff9800; }
+        .error-item strong { color: #d84315; font-size: 16px; }
+        .error-item .count { background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px; }
+        .suggestions { margin-top: 12px; padding: 12px; background: #e3f2fd; border-radius: 4px; }
+        .suggestions h4 { margin: 0 0 8px 0; color: #1565c0; font-size: 14px; }
+        .suggestion-item { display: inline-block; background: #fff; padding: 6px 12px; margin: 4px; border-radius: 4px; border: 1px solid #90caf9; cursor: pointer; }
+        .suggestion-item:hover { background: #bbdefb; }
+        .actions { margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; }
+        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .btn-primary { background: #1976d2; color: white; }
+        .btn-primary:hover { background: #1565c0; }
+        .btn-secondary { background: #757575; color: white; }
+        .btn-secondary:hover { background: #616161; }
+        .btn-success { background: #388e3c; color: white; }
+        .btn-success:hover { background: #2e7d32; }
+        .btn-danger { background: #d32f2f; color: white; }
+        .btn-danger:hover { background: #c62828; }
+        .form-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .form-inline input, .form-inline select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .form-inline input { flex: 1; min-width: 200px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 24px; border-radius: 8px; max-width: 500px; width: 90%; }
+        .modal-content h3 { margin-top: 0; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 4px; font-weight: 600; color: #555; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .alert { padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+        .alert-error { background: #ffebee; border-left: 4px solid #c62828; color: #c62828; }
+        .alert-success { background: #e8f5e9; border-left: 4px solid #388e3c; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/">Inicio</a>
+        <a href="/planificacion/normalizar/">Normalizar</a>
+        <a href="/planificacion/errores/">Resolver Errores</a>
+    </nav>
+
+    <h1>🔧 Resolver Errores de Planificación</h1>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <div class="summary">
+        <strong>Total de errores:</strong> {{ total_errors }}
+    </div>
+
+    {% if not cedis_origen_faltantes and not sucursales_faltantes and not productos_faltantes %}
+    <div class="alert alert-success">
+        ✅ No hay errores pendientes de resolver
+    </div>
+    {% endif %}
+
+    <!-- CEDIS Origen Faltantes -->
+    {% if cedis_origen_faltantes %}
+    <div class="error-group">
+        <h3>🏭 CEDIS Origen No Encontrados</h3>
+        {% for cedis_name, error_ids in cedis_origen_faltantes.items %}
+        <div class="error-item">
+            <strong>{{ cedis_name|default:"(vacío)" }}</strong>
+            <span class="count">{{ error_ids|length }} registros</span>
+            
+            {% if cedis_name in cedis_origen_suggestions and cedis_origen_suggestions|get_item:cedis_name %}
+            <div class="suggestions">
+                <h4>💡 Sugerencias similares:</h4>
+                {% for suggestion in cedis_origen_suggestions|get_item:cedis_name %}
+                <span class="suggestion-item" onclick="selectSuggestion('{{ cedis_name }}', '{{ suggestion }}', 'cedis_origen')">
+                    {{ suggestion }}
+                </span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="actions">
+                <button class="btn-primary" onclick="openCreateCedisOrigenModal('{{ cedis_name }}')">
+                    ➕ Crear Nuevo CEDIS
+                </button>
+                <button class="btn-success" onclick="openMapCedisOrigenModal('{{ cedis_name }}')">
+                    🔗 Mapear a Existente
+                </button>
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="ignore_errors">
+                    <input type="hidden" name="cendis" value="{{ cedis_name }}">
+                    <button type="submit" class="btn-danger">🚫 Ignorar</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Sucursales Faltantes -->
+    {% if sucursales_faltantes %}
+    <div class="error-group">
+        <h3>🏢 Sucursales No Encontradas</h3>
+        {% for sucursal_name, error_ids in sucursales_faltantes.items %}
+        <div class="error-item">
+            <strong>{{ sucursal_name|default:"(vacío)" }}</strong>
+            <span class="count">{{ error_ids|length }} registros</span>
+            
+            {% if sucursal_name in sucursal_suggestions and sucursal_suggestions|get_item:sucursal_name %}
+            <div class="suggestions">
+                <h4>💡 Sugerencias similares:</h4>
+                {% for suggestion in sucursal_suggestions|get_item:sucursal_name %}
+                <span class="suggestion-item" onclick="selectSuggestion('{{ sucursal_name }}', '{{ suggestion }}', 'sucursal')">
+                    {{ suggestion }}
+                </span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="actions">
+                <button class="btn-primary" onclick="openCreateSucursalModal('{{ sucursal_name }}')">
+                    ➕ Crear Nueva Sucursal
+                </button>
+                <button class="btn-success" onclick="openMapSucursalModal('{{ sucursal_name }}')">
+                    🔗 Mapear a Existente
+                </button>
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="ignore_errors">
+                    <input type="hidden" name="error_type" value="sucursal">
+                    <input type="hidden" name="error_value" value="{{ sucursal_name }}">
+                    <button type="submit" class="btn-danger">❌ Ignorar</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Productos Faltantes -->
+    {% if productos_faltantes %}
+    <div class="error-group">
+        <h3>📦 Productos No Encontrados</h3>
+        {% for product_code, error_ids in productos_faltantes.items %}
+        <div class="error-item">
+            <strong>{{ product_code|default:"(vacío)" }}</strong>
+            <span class="count">{{ error_ids|length }} registros</span>
+            
+            {% if product_code in product_suggestions and product_suggestions|get_item:product_code %}
+            <div class="suggestions">
+                <h4>💡 Sugerencias similares:</h4>
+                {% for suggestion in product_suggestions|get_item:product_code %}
+                <span class="suggestion-item" onclick="selectSuggestion('{{ product_code }}', '{{ suggestion.code }}', 'product')">
+                    {{ suggestion.code }} - {{ suggestion.name|truncatechars:30 }}
+                </span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="actions">
+                <button class="btn-primary" onclick="openCreateProductModal('{{ product_code }}')">
+                    ➕ Crear Nuevo Producto
+                </button>
+                <button class="btn-success" onclick="openMapProductModal('{{ product_code }}')">
+                    🔗 Mapear a Existente
+                </button>
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="ignore_errors">
+                    <input type="hidden" name="error_type" value="product">
+                    <input type="hidden" name="error_value" value="{{ product_code }}">
+                    <button type="submit" class="btn-danger">❌ Ignorar</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Modal: Crear CEDIS Origen -->
+    <div id="createCedisOrigenModal" class="modal">
+        <div class="modal-content">
+            <h3>➕ Crear Nuevo CEDIS Origen</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_cedis_origen">
+                <div class="form-group">
+                    <label>Nombre del CEDIS (origin):</label>
+                    <input type="text" name="cedis_name" id="new_cedis_origen_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Código:</label>
+                    <input type="text" name="cedis_code" required placeholder="Ej: 1000105">
+                </div>
+                <div class="actions">
+                    <button type="submit" class="btn-primary">Crear</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('createCedisOrigenModal')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Mapear CEDIS Origen -->
+    <div id="mapCedisOrigenModal" class="modal">
+        <div class="modal-content">
+            <h3>🔗 Mapear CEDIS Origen</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="map_cedis_origen">
+                <input type="hidden" name="original_name" id="map_original_cedis_origen">
+                <div class="form-group">
+                    <label>Nombre en datos:</label>
+                    <input type="text" id="map_original_cedis_origen_display" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Mapear a:</label>
+                    <input type="text" name="target_name" id="map_target_cedis_origen" required>
+                </div>
+                <div class="actions">
+                    <button type="submit" class="btn-success">Mapear</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('mapCedisOrigenModal')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Crear Sucursal -->
+    <div id="createSucursalModal" class="modal">
+        <div class="modal-content">
+            <h3>➕ Crear Nueva Sucursal</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_sucursal">
+                <div class="form-group">
+                    <label>Nombre:</label>
+                    <input type="text" name="sucursal_name" id="new_sucursal_name" required>
+                </div>
+                <div class="form-group">
+                    <label>BPL ID:</label>
+                    <input type="number" name="bpl_id" required>
+                </div>
+                <div class="actions">
+                    <button type="submit" class="btn-primary">Crear</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('createSucursalModal')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Mapear Sucursal -->
+    <div id="mapSucursalModal" class="modal">
+        <div class="modal-content">
+            <h3>🔗 Mapear Sucursal</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="map_sucursal">
+                <input type="hidden" name="original_name" id="map_original_sucursal">
+                <div class="form-group">
+                    <label>Nombre en datos:</label>
+                    <input type="text" id="map_original_sucursal_display" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Mapear a:</label>
+                    <input type="text" name="target_name" id="map_target_sucursal" required>
+                </div>
+                <div class="actions">
+                    <button type="submit" class="btn-success">Mapear</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('mapSucursalModal')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Crear Producto -->
+    <div id="createProductModal" class="modal">
+        <div class="modal-content">
+            <h3>➕ Crear Nuevo Producto</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_product">
+                <div class="form-group">
+                    <label>Código:</label>
+                    <input type="text" name="product_code" id="new_product_code" required>
+                </div>
+                <div class="form-group">
+                    <label>Nombre:</label>
+                    <input type="text" name="product_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Grupo:</label>
+                    <input type="text" name="product_group">
+                </div>
+                <div class="actions">
+                    <button type="submit" class="btn-primary">Crear</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('createProductModal')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Mapear Producto -->
+    <div id="mapProductModal" class="modal">
+        <div class="modal-content">
+            <h3>🔗 Mapear Producto</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="map_product">
+                <input type="hidden" name="original_code" id="map_original_product">
+                <div class="form-group">
+                    <label>Código en datos:</label>
+                    <input type="text" id="map_original_product_display" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Mapear a:</label>
+                    <input type="text" name="target_code" id="map_target_product" required>
+                </div>
+                <div class="actions">
+                    <button type="submit" class="btn-success">Mapear</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('mapProductModal')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openCreateCedisOrigenModal(name) {
+            document.getElementById('new_cedis_origen_name').value = name;
+            document.getElementById('createCedisOrigenModal').classList.add('active');
+        }
+
+        function openMapCedisOrigenModal(name) {
+            document.getElementById('map_original_cedis_origen').value = name;
+            document.getElementById('map_original_cedis_origen_display').value = name;
+            document.getElementById('mapCedisOrigenModal').classList.add('active');
+        }
+
+        function openCreateSucursalModal(name) {
+            document.getElementById('new_sucursal_name').value = name;
+            document.getElementById('createSucursalModal').classList.add('active');
+        }
+
+        function openMapSucursalModal(name) {
+            document.getElementById('map_original_sucursal').value = name;
+            document.getElementById('map_original_sucursal_display').value = name;
+            document.getElementById('mapSucursalModal').classList.add('active');
+        }
+
+        function openCreateProductModal(code) {
+            document.getElementById('new_product_code').value = code;
+            document.getElementById('createProductModal').classList.add('active');
+        }
+
+        function openMapProductModal(code) {
+            document.getElementById('map_original_product').value = code;
+            document.getElementById('map_original_product_display').value = code;
+            document.getElementById('mapProductModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function selectSuggestion(original, target, type) {
+            if (type === 'cedis_origen') {
+                document.getElementById('map_original_cedis_origen').value = original;
+                document.getElementById('map_original_cedis_origen_display').value = original;
+                document.getElementById('map_target_cedis_origen').value = target;
+                document.getElementById('mapCedisOrigenModal').classList.add('active');
+            } else if (type === 'sucursal') {
+                document.getElementById('map_original_sucursal').value = original;
+                document.getElementById('map_original_sucursal_display').value = original;
+                document.getElementById('map_target_sucursal').value = target;
+                document.getElementById('mapSucursalModal').classList.add('active');
+            } else if (type === 'product') {
+                document.getElementById('map_original_product').value = original;
+                document.getElementById('map_original_product_display').value = original;
+                document.getElementById('map_target_product').value = target;
+                document.getElementById('mapProductModal').classList.add('active');
+            }
+        }
+
+        // Cerrar modal al hacer click fuera
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Subir Salidas</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px 48px 24px;
+        }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 48px;
+            box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
+        }
+        .nav { 
+            display: flex; 
+            gap: 32px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav a { 
+            color: #2c2c2c;
+            text-decoration: none; 
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav a:hover { 
+            color: #dc0000;
+            border-bottom-color: #dc0000;
+        }
+        h1 { 
+            font-size: 42px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: 400;
+            color: #dc0000;
+            margin: 32px 0 20px 0;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #5a5a5a;
+            margin-bottom: 32px;
+        }
+        .card { 
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 32px;
+            max-width: 800px;
+        }
+        form label {
+            display: block;
+            font-weight: 500;
+            color: #2c2c2c;
+            margin-bottom: 8px;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #ffffff;
+        }
+        button {
+            background: #dc0000;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            margin-right: 12px;
+        }
+        button:hover {
+            background: #b80000;
+            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.2);
+        }
+        .note {
+            font-size: 13px;
+            color: #5a5a5a;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .error { 
+            color: #dc0000;
+            background: #ffebee;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+        .error div {
+            margin-bottom: 4px;
+        }
+        .error div:last-child {
+            margin-bottom: 0;
+        }
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 16px;
+        }
+        th, td { 
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 14px;
+        }
+        th { 
+            background: #fafafa;
+            font-weight: 500;
+            color: #2c2c2c;
+            border-bottom: 2px solid #e8e8e8;
+        }
+        td {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover {
+            background: #fafafa;
+        }
+        .summary { 
+            margin-top: 32px;
+        }
+        .summary p {
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+        .summary strong {
+            color: #dc0000;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav class="nav">
+                <a href="/">Inicio</a>
+                <a href="/subidas/">Subir archivos</a>
+                <a href="/salidas/">Salidas</a>
+            </nav>
+        </div>
+    </header>
+    <div class="container">
+        <h1>Subir Salidas</h1>
+        <p class="subtitle">El archivo debe tener una sola hoja; se previsualiza y luego se importa.</p>
+
+    <div class="card" id="upload">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="file">Archivo Excel (.xlsx):</label><br />
+            <input type="file" id="file" name="file" accept=".xlsx" required />
+            <br /><br />
+            <button type="submit" name="step" value="preview">Previsualizar</button>
+            <button type="submit" name="step" value="import">Importar</button>
+            <div style="font-size: 12px; color: #555; margin-top: 4px;">Nota: el navegador no conserva el archivo entre envíos; vuelve a elegirlo si importas tras previsualizar.</div>
+        </form>
+        {% if errors %}
+            <div class="error">
+                {% for err in errors %}
+                    <div>{{ err }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {% if summary %}
+        <div class="summary">
+            <h2>Información del archivo</h2>
+            <p>Archivo: <strong>{{ summary.filename }}</strong></p>
+            <p>Hojas encontradas: {{ summary.sheet_count }} (usando: <strong>{{ summary.sheet_name }}</strong>)</p>
+            {% if summary.target_month %}
+                <p>Mes detectado: <strong>{{ summary.target_month }}</strong></p>
+            {% endif %}
+            {% if summary.created_entries or summary.updated_entries %}
+                <p>Filas creadas: <strong>{{ summary.created_entries }}</strong> · Filas actualizadas: <strong>{{ summary.updated_entries }}</strong></p>
+            {% endif %}
+            {% if summary.skipped_rows or summary.skipped_wrong_month or summary.skipped_no_date %}
+                <p>Omitidas vacías: <strong>{{ summary.skipped_rows }}</strong> · Omitidas por otro mes: <strong>{{ summary.skipped_wrong_month }}</strong> · Omitidas sin fecha: <strong>{{ summary.skipped_no_date }}</strong></p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if preview_headers %}
+        <div class="summary">
+            <h2>Previsualización (primeras 10 filas)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        {% for h in preview_headers %}<th>{{ h }}</th>{% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in preview_rows %}
+                        <tr>
+                            {% for cell in row %}<td>{{ cell }}</td>{% endfor %}
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="{{ preview_headers|length }}">Sin datos</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</body>
+</html>

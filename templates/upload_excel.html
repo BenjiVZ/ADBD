@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cargar Excel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 48px;
+            box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
+        }
+        .nav { 
+            display: flex; 
+            gap: 32px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav a { 
+            color: #2c2c2c;
+            text-decoration: none; 
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav a:hover { 
+            color: #dc0000;
+            border-bottom-color: #dc0000;
+        }
+        h1 { 
+            font-size: 42px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #5a5a5a;
+            margin-bottom: 32px;
+        }
+        .card { 
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 32px;
+            max-width: 600px;
+            margin-bottom: 32px;
+        }
+        form label {
+            display: block;
+            font-weight: 500;
+            color: #2c2c2c;
+            margin-bottom: 8px;
+        }
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #e8e8e8;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+        input[type="file"]:hover {
+            border-color: #dc0000;
+            background: #fff;
+        }
+        button[type="submit"] {
+            background: #dc0000;
+            color: #ffffff;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button[type="submit"]:hover {
+            background: #b80000;
+            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.2);
+        }
+        .error { 
+            color: #dc0000;
+            background: #ffebee;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 24px;
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td { 
+            padding: 12px 16px;
+            text-align: left;
+        }
+        th { 
+            background: #fafafa;
+            font-weight: 500;
+            color: #2c2c2c;
+            border-bottom: 2px solid #dc0000;
+        }
+        td {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .summary { 
+            margin-top: 48px;
+        }
+        .summary h2 {
+            font-size: 24px;
+            font-weight: 400;
+            color: #dc0000;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav class="nav">
+                <a href="/">Inicio</a>
+                <a href="/faltantes/">Productos con faltantes</a>
+                <a href="/pvp/faltantes/">PVP con issues</a>
+                <a href="/subidas/">Subir archivos</a>
+            </nav>
+        </div>
+    </header>
+    <div class="container">
+        <h1>Cargar Excel</h1>
+        <p class="subtitle">Sube un archivo .xlsx con las hojas "Maestro de Productos" y "PVP" para poblar las tablas.</p>
+
+        <div class="card" id="upload">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="file">Archivo Excel (.xlsx):</label><br />
+            <input type="file" id="file" name="file" accept=".xlsx" required />
+            <br /><br />
+            <button type="submit">Subir y procesar</button>
+        </form>
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+    </div>
+
+    {% if summary %}
+        <div class="summary">
+            <h2>Resumen de carga</h2>
+            <table>
+                <tr><th colspan="3">Maestro de Productos</th></tr>
+                <tr><td>Creado</td><td>{{ summary.products.created }}</td></tr>
+                <tr><td>Actualizado</td><td>{{ summary.products.updated }}</td></tr>
+                <tr><td>Omitido</td><td>{{ summary.products.skipped }}</td></tr>
+            </table>
+            <br />
+            <table>
+                <tr><th colspan="4">PVP</th></tr>
+                <tr><td>Creado</td><td>{{ summary.pvp.created }}</td></tr>
+                <tr><td>Actualizado</td><td>{{ summary.pvp.updated }}</td></tr>
+                <tr><td>Omitido</td><td>{{ summary.pvp.skipped }}</td></tr>
+                <tr><td>Sin producto</td><td>{{ summary.pvp.missing_product }}</td></tr>
+            </table>
+        </div>
+    {% endif %}
+    </div>
+</body>
+</html>

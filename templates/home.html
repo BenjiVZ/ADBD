@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inicio</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 48px;
+            box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
+        }
+        .nav { 
+            display: flex; 
+            gap: 32px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav a { 
+            color: #2c2c2c;
+            text-decoration: none; 
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav a:hover { 
+            color: #dc0000;
+            border-bottom-color: #dc0000;
+        }
+        .nav a.active {
+            color: #dc0000;
+            border-bottom-color: #dc0000;
+        }
+        h1 { 
+            font-size: 42px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-bottom: 24px;
+            letter-spacing: -0.5px;
+        }
+        p {
+            font-size: 16px;
+            color: #5a5a5a;
+            margin-bottom: 16px;
+            max-width: 800px;
+        }
+        .content {
+            padding: 24px 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav class="nav">
+                <a href="/" class="active">Inicio</a>
+                <a href="/subidas/">Subir archivos</a>
+                <a href="/planificacion/normalizar/">Normalizar planificación</a>
+                <a href="/salidas/normalizar/">Normalizar salidas</a>
+                <a href="/tablero/normalizado/">Tablero normalizado</a>
+            </nav>
+        </div>
+    </header>
+    <div class="container">
+        <div class="content">
+            <h1>Bienvenido al sistema de Damasco</h1>
+            <p>Analítica de pedidos y salidas de almacén hacia sucursales. Selecciona la opción que necesites.</p>
+            <p>Usa la barra de navegación para ir al menú de subidas, revisar productos con faltantes o PVP con issues.</p>
+        </div>
+    </div>
+</body>
+</html>
