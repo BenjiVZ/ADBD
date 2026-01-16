@@ -212,7 +212,7 @@
                     <label for="plan_month">Mes</label>
                     <select id="plan_month" name="plan_month" {% if not months %}disabled{% endif %}>
                         {% for m in months %}
-                            <option value="{{ m|date:'Y-m-d' }}" {% if m == selected_month %}selected{% endif %}>{{ m|date:'Y-m' }}</option>
+                            <option value="{{ m|date:'Y-m-d' }}" {% if m == selected_month %}selected{% endif %}>{{ m|date:'d/m/Y' }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -234,12 +234,28 @@
                     Normalizar pendientes
                 </button>
             </form>
+            {% if selected_month %}
+            <form method="post" style="display: inline;" onsubmit='return confirm("¿Limpiar y re-normalizar TODO el mes {{ selected_month|date:"d/m/Y" }}?");'>
+                {% csrf_token %}
+                <input type="hidden" name="plan_month" value="{{ selected_month }}" />
+                <input type="hidden" name="action" value="reset_month" />
+                <button class="btn" type="submit" style="background: #f57c00;">
+                    🔄 Limpiar y re-normalizar {{ selected_month|date:'d/m/Y' }}
+                </button>
+            </form>
+            {% endif %}
             {% if summary.error > 0 %}
             <a href="/planificacion/errores/" class="btn btn-secondary">
                 Resolver {{ summary.error }} errores
             </a>
             {% endif %}
         </div>
+
+        {% if message %}
+        <div class="info-card" style="background: #e8f5e9; border-color: #4caf50;">
+            {{ message }}
+        </div>
+        {% endif %}
 
         {% if ran %}
         <div class="info-card">

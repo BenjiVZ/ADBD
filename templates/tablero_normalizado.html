@@ -13,7 +13,7 @@
             line-height: 1.6;
         }
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 0 24px 48px 24px;
         }
@@ -21,17 +21,17 @@
             background: #ffffff;
             border-bottom: 2px solid #dc0000;
             padding: 20px 0;
-            margin-bottom: 48px;
+            margin-bottom: 32px;
             box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
             position: sticky;
             top: 0;
             z-index: 100;
         }
         h1 { 
-            font-size: 42px;
+            font-size: 36px;
             font-weight: 300;
             color: #dc0000;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
             letter-spacing: -0.5px;
         }
         .nav { 
@@ -57,48 +57,38 @@
             background: #ffffff;
             border: 1px solid #e8e8e8;
             border-radius: 8px;
-            padding: 32px;
+            padding: 24px;
             margin-bottom: 24px;
         }
         .filters {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            display: flex;
             gap: 20px;
-            margin-bottom: 24px;
+            flex-wrap: wrap;
+            align-items: flex-end;
         }
         .filter-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
         .filter-group label {
             font-weight: 500;
             color: #2c2c2c;
-            font-size: 14px;
+            font-size: 13px;
         }
-        .filter-group input,
         .filter-group select {
-            padding: 12px 14px;
+            padding: 10px 14px;
             border: 1px solid #e8e8e8;
             border-radius: 6px;
             font-size: 14px;
-            transition: all 0.3s ease;
-            background: #ffffff;
+            min-width: 200px;
         }
-        .filter-group input:focus,
         .filter-group select:focus {
             outline: none;
             border-color: #dc0000;
-            box-shadow: 0 0 0 3px rgba(220, 0, 0, 0.1);
-        }
-        .actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 24px;
-            flex-wrap: wrap;
         }
         .btn {
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: none;
             border-radius: 6px;
             font-weight: 500;
@@ -112,7 +102,6 @@
         }
         .btn-primary:hover {
             background: #b80000;
-            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.2);
         }
         .btn-secondary {
             background: #2c2c2c;
@@ -121,101 +110,276 @@
         .btn-secondary:hover {
             background: #1a1a1a;
         }
-        .summary {
-        .summary {
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #e8e8e8;
+            margin-bottom: 24px;
+        }
+        .tab {
+            padding: 14px 28px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 15px;
+            color: #5a5a5a;
+            border: none;
+            background: none;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .tab:hover {
+            color: #dc0000;
+        }
+        .tab.active {
+            color: #dc0000;
+        }
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #dc0000;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Nacional Summary */
+        .nacional-summary {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
             margin-bottom: 24px;
         }
         .summary-card {
             background: #fafafa;
-            color: #2c2c2c;
-            padding: 24px;
+            padding: 20px;
             border-radius: 8px;
             text-align: center;
             border: 1px solid #e8e8e8;
-            transition: all 0.3s ease;
         }
-        .summary-card:hover {
-            border-color: #dc0000;
-            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.1);
-        }
-        .summary-card.success {
-            background: #f1f8f4;
-            border-color: #4caf50;
-        }
-        .summary-card.warning {
+        .summary-card.highlight {
             background: #fff5f5;
             border-color: #dc0000;
         }
         .summary-label {
-            font-size: 13px;
+            font-size: 12px;
             color: #5a5a5a;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 500;
         }
         .summary-value {
-            font-size: 32px;
-            font-weight: 300;
-            color: #dc0000;
+            font-size: 24px;
+            font-weight: 400;
+            color: #2c2c2c;
         }
+        .summary-value.percent {
+            color: #dc0000;
+            font-weight: 600;
+        }
+        
+        /* Tables */
         table { 
             border-collapse: collapse; 
             width: 100%; 
-            margin-top: 16px; 
             background: white;
             border: 1px solid #e8e8e8;
             border-radius: 8px;
             overflow: hidden;
+            font-size: 13px;
         }
         th, td { 
-            padding: 12px 16px;
-            font-size: 14px;
+            padding: 10px 12px;
         }
         th { 
             background: #fafafa;
             text-align: center; 
-            font-weight: 500;
+            font-weight: 600;
             color: #2c2c2c;
             border-bottom: 2px solid #e8e8e8;
+            font-size: 12px;
+            white-space: nowrap;
         }
-        .header { 
+        th.group-header {
             background: #dc0000;
-            color: #fff; 
-            font-weight: 500;
-            text-align: center;
-            font-size: 16px;
+            color: white;
         }
-        .dest-row { 
-            background: #f5f5f5;
-            font-weight: 500;
+        td {
+            text-align: right;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        td:first-child {
             text-align: left;
-            color: #2c2c2c;
+            font-weight: 500;
         }
-        .group-name {
-            text-align: left !important;
+        tr:hover {
+            background: #fafafa;
+        }
+        .total-row {
+            background: #f5f5f5 !important;
+            font-weight: 600;
+        }
+        .total-row td {
+            border-top: 2px solid #e8e8e8;
+        }
+        
+        /* Cumplimiento hierarchy */
+        .cedis-block {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .cedis-header {
+            background: #dc0000;
+            color: white;
+            padding: 14px 20px;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .cedis-header .percent {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .cedis-content {
+            padding: 0;
+        }
+        .tipo-block {
+            border-bottom: 1px solid #e8e8e8;
+        }
+        .tipo-block:last-child {
+            border-bottom: none;
+        }
+        .tipo-header {
+            background: #f5f5f5;
+            padding: 12px 20px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .tipo-header:hover {
+            background: #eee;
+        }
+        .tipo-header .percent {
+            color: #dc0000;
+            font-weight: 700;
+        }
+        .categoria-block {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .categoria-block:last-child {
+            border-bottom: none;
+        }
+        .categoria-header {
+            background: #fafafa;
+            padding: 10px 20px 10px 40px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .categoria-header:hover {
+            background: #f5f5f5;
+        }
+        .categoria-header .percent {
+            color: #dc0000;
+            font-weight: 600;
+        }
+        .producto-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .producto-table th {
+            background: #f5f5f5;
+            padding: 8px 20px 8px 60px;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+        .producto-table td {
+            padding: 6px 20px 6px 60px;
+            border-bottom: 1px solid #fafafa;
+            font-size: 12px;
+        }
+        .producto-table td:first-child {
             font-weight: 400;
-            padding-left: 32px !important;
         }
-        .status-completo { background: #e8f5e9 !important; color: #2e7d32; font-weight: 500; }
-        .status-alto { background: #fff9c4 !important; color: #f57f17; font-weight: 500; }
-        .status-medio { background: #ffebee !important; color: #d84315; font-weight: 500; }
-        .status-bajo { background: #ffcdd2 !important; color: #c62828; font-weight: 500; }
-        .status-sin_entregas { background: #fafafa !important; color: #999; font-style: italic; }
-        .status-sin_plan { background: #f3e5f5 !important; color: #6a1b9a; }
-        .muted { 
-            color: #999; 
-            font-size: 13px; 
-            font-style: italic;
+        .producto-table tr:last-child td {
+            border-bottom: none;
         }
+        .producto-table tr:hover {
+            background: #f9f9f9;
+        }
+        .grupo-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .grupo-table th {
+            background: #fafafa;
+            padding: 8px 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+        .grupo-table td {
+            padding: 8px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .grupo-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* Colors for percent values */
+        .percent-high { color: #2e7d32; }
+        .percent-medium { color: #f57f17; }
+        .percent-low { color: #c62828; }
+        
         .no-data {
             text-align: center;
             padding: 48px 24px;
             color: #999;
         }
-        .qty {
-            text-align: right !important;
+        .usd { color: #666; font-style: italic; }
+        
+        /* Animaciones */
+        @keyframes fire {
+            0%, 100% { 
+                text-shadow: 0 0 5px #ff6600, 0 0 10px #ff6600, 0 0 15px #ff6600;
+            }
+            50% { 
+                text-shadow: 0 0 10px #ff9900, 0 0 20px #ff9900, 0 0 30px #ff6600;
+            }
+        }
+        
+        .fire-effect {
+            animation: fire 1.5s ease-in-out infinite;
+        }
+        
+        .ranking-badge {
+            display: inline-block;
+            margin-right: 8px;
+            margin-right: 8px;
+        }
+        
+        .cedis-header.top-performer {
+            background: linear-gradient(135deg, #dc0000 0%, #ff4444 100%);
         }
     </style>
 </head>
@@ -234,169 +398,373 @@
     <div class="container">
         <h1>Tablero de Cumplimiento de Entregas</h1>
 
-    <div class="card">
-        <form method="get">
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="plan_date">Fecha de Planificación</label>
-                    <select id="plan_date" name="plan_date">
-                        <option value="">Seleccione fecha...</option>
-                        {% for date in plan_dates %}
-                            <option value="{{ date|date:'Y-m-d' }}" {% if plan_date == date %}selected{% endif %}>
-                                {{ date|date:'d/m/Y' }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="salida_date">Fecha de Salidas</label>
-                    <select id="salida_date" name="salida_date">
-                        <option value="">Seleccione fecha...</option>
-                        {% for date in salida_dates %}
-                            <option value="{{ date|date:'Y-m-d' }}" {% if salida_date == date %}selected{% endif %}>
-                                {{ date|date:'d/m/Y' }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="origin">CEDIS Origen</label>
-                    <select id="origin" name="origin">
-                        <option value="">Todos los CEDIS</option>
-                        {% for oid, oname in origin_choices %}
-                            <option value="{{ oid }}" {% if selected_origin == oid %}selected{% endif %}>
-                                {{ oname }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <div class="actions">
-                <button type="submit" class="btn btn-primary">Analizar Cumplimiento</button>
-                <button type="submit" name="export" value="csv" class="btn btn-secondary">Descargar CSV</button>
-            </div>
-        </form>
-    </div>
-
-    {% if plan_date and salida_date %}
+        <!-- Filtros -->
         <div class="card">
-            <h3 style="margin-top: 0; font-size: 24px; font-weight: 400; color: #dc0000; margin-bottom: 24px;">Resumen General</h3>
-            <div class="summary">
-                <div class="summary-card">
-                    <div class="summary-label">Total Planificado</div>
-                    <div class="summary-value">{{ summary.total_plan|floatformat:0 }}</div>
+            <form method="get" id="filterForm">
+                <input type="hidden" name="tab" id="tabInput" value="{{ active_tab }}">
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="plan_date">Fecha Planificación</label>
+                        <select id="plan_date" name="plan_date">
+                            <option value="">Seleccione...</option>
+                            {% for date in plan_dates %}
+                                <option value="{{ date|date:'Y-m-d' }}" {% if plan_date == date %}selected{% endif %}>
+                                    {{ date|date:'d/m/Y' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="salida_date">Fecha Salidas</label>
+                        <select id="salida_date" name="salida_date">
+                            <option value="">Seleccione...</option>
+                            {% for date in salida_dates %}
+                                <option value="{{ date|date:'Y-m-d' }}" {% if salida_date == date %}selected{% endif %}>
+                                    {{ date|date:'d/m/Y' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Analizar</button>
                 </div>
-                <div class="summary-card success">
-                    <div class="summary-label">Total Enviado</div>
-                    <div class="summary-value" style="color: #4caf50;">{{ summary.total_salidas|floatformat:0 }}</div>
-                </div>
-                <div class="summary-card {% if summary.percent_general >= 80 %}success{% else %}warning{% endif %}">
-                    <div class="summary-label">% Cumplimiento</div>
-                    <div class="summary-value" style="color: {% if summary.percent_general >= 80 %}#4caf50{% else %}#dc0000{% endif %};">{{ summary.percent_general|floatformat:1 }}%</div>
-                </div>
-                <div class="summary-card">
-                    <div class="summary-label">Destinos</div>
-                    <div class="summary-value">{{ summary.total_destinos }}</div>
-                </div>
+            </form>
+        </div>
+
+        {% if plan_date and salida_date %}
+        
+        <!-- Resumen Nacional -->
+        <div class="nacional-summary">
+            <div class="summary-card">
+                <div class="summary-label">Unid. Planificadas</div>
+                <div class="summary-value">{{ nacional.plan_qty|floatformat:0|default:"0" }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Unid. Plan. Despachadas</div>
+                <div class="summary-value">{{ nacional.salida_plan_qty|floatformat:0|default:"0" }}</div>
+            </div>
+            <div class="summary-card highlight">
+                <div class="summary-label">% Cumplimiento</div>
+                <div class="summary-value percent">{{ nacional.percent_qty|floatformat:1|default:"0" }}%</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Unid. NO Plan. Despachadas</div>
+                <div class="summary-value">{{ nacional.salida_noplan_qty|floatformat:0|default:"0" }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Total Unid. Despachadas</div>
+                <div class="summary-value">{{ nacional.total_salida_qty|floatformat:0|default:"0" }}</div>
             </div>
         </div>
-    {% endif %}
 
-    {% if not plan_date or not salida_date %}
+        <!-- Pestañas -->
+        <div class="tabs">
+            <button class="tab {% if active_tab == 'cumplimiento' %}active{% endif %}" data-tab="cumplimiento">
+                📊 Resumen por CEDIS
+            </button>
+            <button class="tab {% if active_tab == 'cedis' %}active{% endif %}" data-tab="cedis">
+                🏭 Tabla Resumen por CEDIS
+            </button>
+            <button class="tab {% if active_tab == 'tiendas' %}active{% endif %}" data-tab="tiendas">
+                🏪 Resumen por Tienda
+            </button>
+        </div>
+
+        <!-- Tab 1: Resumen por CEDIS -->
+        <div id="tab-cumplimiento" class="tab-content {% if active_tab == 'cumplimiento' %}active{% endif %}">
+            {% if resumen_cumplimiento %}
+                <div style="margin-bottom: 16px; text-align: right;">
+                    <a href="?plan_date={{ plan_date|date:'Y-m-d' }}&salida_date={{ salida_date|date:'Y-m-d' }}&export=cumplimiento" class="btn btn-secondary">
+                        📥 Descargar CSV
+                    </a>
+                </div>
+                
+                {% for cedis in resumen_cumplimiento %}
+                <div class="cedis-block">
+                    <div class="cedis-header {% if forloop.counter == 1 %}fire-effect{% endif %}" onclick="toggleCedis(this)">
+                        <span>
+                            {% if cedis.percent >= 80 %}
+                                {% if forloop.counter == 1 %}
+                                    <span class="ranking-badge">⭐⭐⭐</span>
+                                {% elif forloop.counter == 2 %}
+                                    <span class="ranking-badge">⭐⭐</span>
+                                {% elif forloop.counter == 3 %}
+                                    <span class="ranking-badge">⭐</span>
+                                {% endif %}
+                            {% endif %}
+                        </span>
+                        <span>🏭 {{ cedis.name }}</span>
+                        <span>{{ cedis.percent|floatformat:1 }}% | Plan: {{ cedis.plan|floatformat:0 }} | Despachado: {{ cedis.salida|floatformat:0 }}</span>
+                    </div>
+                    <div class="cedis-content" style="display: none;">
+                        {% for tipo in cedis.tipos %}
+                        <div class="tipo-block">
+                            <div class="tipo-header" onclick="toggleTipo(this)">
+                                <span>📦 {{ tipo.name }}</span>
+                                <span class="percent">
+                                    {{ tipo.salida|floatformat:0 }} / {{ tipo.plan|floatformat:0 }} = {{ tipo.percent|floatformat:1 }}%
+                                </span>
+                            </div>
+                            <div style="display: none;">
+                                {% for categoria in tipo.categorias %}
+                                <div class="categoria-block">
+                                    <div class="categoria-header" onclick="toggleCategoria(this)">
+                                        <span>📂 {{ categoria.name }}</span>
+                                        <span class="percent">
+                                            {{ categoria.salida|floatformat:0 }} / {{ categoria.plan|floatformat:0 }} = {{ categoria.percent|floatformat:1 }}%
+                                        </span>
+                                    </div>
+                                    <table class="producto-table" style="display: none;">
+                                        <thead>
+                                            <tr>
+                                                <th style="text-align: left;">Producto</th>
+                                                <th>Planificado</th>
+                                                <th>Despachado</th>
+                                                <th>% Cumplimiento</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for producto in categoria.productos %}
+                                            <tr>
+                                                <td>{{ producto.name }}</td>
+                                                <td>{{ producto.plan|floatformat:0 }}</td>
+                                                <td>{{ producto.salida|floatformat:0 }}</td>
+                                                <td class="{% if producto.percent >= 80 %}percent-high{% elif producto.percent >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                                    {{ producto.percent|floatformat:1 }}%
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-data">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+                    <p>No hay datos de cumplimiento disponibles.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Tab 2: Tabla Resumen por CEDIS -->
+        <div id="tab-cedis" class="tab-content {% if active_tab == 'cedis' %}active{% endif %}">
+            {% if resumen_cedis %}
+                <div style="margin-bottom: 16px; text-align: right;">
+                    <a href="?plan_date={{ plan_date|date:'Y-m-d' }}&salida_date={{ salida_date|date:'Y-m-d' }}&export=cedis" class="btn btn-secondary">
+                        📥 Descargar CSV
+                    </a>
+                </div>
+                <div class="card" style="padding: 0; overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="text-align: left; vertical-align: middle;">CENDIS</th>
+                                <th colspan="2" class="group-header">Planificado</th>
+                                <th colspan="4" class="group-header">Planificado Despachado</th>
+                                <th colspan="2" class="group-header">NO Planificado</th>
+                                <th colspan="2" class="group-header">Total Despachado</th>
+                            </tr>
+                            <tr>
+                                <th>Unidades</th>
+                                <th>USD</th>
+                                <th>Unidades</th>
+                                <th>USD</th>
+                                <th>% Unid.</th>
+                                <th>% USD</th>
+                                <th>Unidades</th>
+                                <th>USD</th>
+                                <th>Unidades</th>
+                                <th>USD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in resumen_cedis %}
+                            <tr>
+                                <td>{{ row.name }}</td>
+                                <td>{{ row.plan_qty|floatformat:0 }}</td>
+                                <td class="usd">${{ row.plan_usd|floatformat:2 }}</td>
+                                <td>{{ row.salida_plan_qty|floatformat:0 }}</td>
+                                <td class="usd">${{ row.salida_plan_usd|floatformat:2 }}</td>
+                                <td class="{% if row.percent_qty >= 80 %}percent-high{% elif row.percent_qty >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                    {{ row.percent_qty|floatformat:1 }}%
+                                </td>
+                                <td class="{% if row.percent_usd >= 80 %}percent-high{% elif row.percent_usd >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                    {{ row.percent_usd|floatformat:1 }}%
+                                </td>
+                                <td>{{ row.salida_noplan_qty|floatformat:0 }}</td>
+                                <td class="usd">${{ row.salida_noplan_usd|floatformat:2 }}</td>
+                                <td><strong>{{ row.total_salida_qty|floatformat:0 }}</strong></td>
+                                <td class="usd"><strong>${{ row.total_salida_usd|floatformat:2 }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td><strong>TOTAL NACIONAL</strong></td>
+                                <td>{{ nacional.plan_qty|floatformat:0 }}</td>
+                                <td class="usd">${{ nacional.plan_usd|floatformat:2 }}</td>
+                                <td>{{ nacional.salida_plan_qty|floatformat:0 }}</td>
+                                <td class="usd">${{ nacional.salida_plan_usd|floatformat:2 }}</td>
+                                <td class="{% if nacional.percent_qty >= 80 %}percent-high{% elif nacional.percent_qty >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                    {{ nacional.percent_qty|floatformat:1 }}%
+                                </td>
+                                <td class="{% if nacional.percent_usd >= 80 %}percent-high{% elif nacional.percent_usd >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                    {{ nacional.percent_usd|floatformat:1 }}%
+                                </td>
+                                <td>{{ nacional.salida_noplan_qty|floatformat:0 }}</td>
+                                <td class="usd">${{ nacional.salida_noplan_usd|floatformat:2 }}</td>
+                                <td><strong>{{ nacional.total_salida_qty|floatformat:0 }}</strong></td>
+                                <td class="usd"><strong>${{ nacional.total_salida_usd|floatformat:2 }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% else %}
+                <div class="no-data">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🏭</div>
+                    <p>No hay datos por CEDIS disponibles.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Tab 3: Resumen por Tienda -->
+        <div id="tab-tiendas" class="tab-content {% if active_tab == 'tiendas' %}active{% endif %}">
+            {% if resumen_tiendas %}
+                <div style="margin-bottom: 16px; text-align: right;">
+                    <a href="?plan_date={{ plan_date|date:'Y-m-d' }}&salida_date={{ salida_date|date:'Y-m-d' }}&export=tiendas" class="btn btn-secondary">
+                        📥 Descargar CSV
+                    </a>
+                </div>
+                
+                {% for tienda in resumen_tiendas %}
+                <div class="cedis-block">
+                    <div class="cedis-header" onclick="toggleCedis(this)">
+                        <div>
+                            🏪 {{ tienda.name }}
+                        </div>
+                        <div>
+                            <span class="percent">{{ tienda.percent_qty|floatformat:1 }}% Cumplimiento</span>
+                            <span style="margin-left: 20px;">Planif: {{ tienda.plan_qty|floatformat:0 }} unid. / ${{ tienda.plan_usd|floatformat:2 }}</span>
+                            <span style="margin-left: 20px;">Despachado: {{ tienda.total_salida_qty|floatformat:0 }} unid. / ${{ tienda.total_salida_usd|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                    <div class="cedis-content" style="display: none;">
+                        {% for prioridad in tienda.prioridades %}
+                        <div class="tipo-block">
+                            <div class="tipo-header" onclick="toggleTipo(this)">
+                                <span>📋 {{ prioridad.name }}</span>
+                                <span class="percent">
+                                    {{ prioridad.salida_plan_qty|floatformat:0 }} / {{ prioridad.plan_qty|floatformat:0 }} = {{ prioridad.percent_qty|floatformat:1 }}%
+                                </span>
+                            </div>
+                            <div style="display: none;">
+                                {% for tipo in prioridad.tipos %}
+                                <div class="categoria-block">
+                                    <div class="categoria-header" onclick="toggleCategoria(this)">
+                                        <span>📦 {{ tipo.name }}</span>
+                                        <span class="percent">
+                                            {{ tipo.salida_plan_qty|floatformat:0 }} / {{ tipo.plan_qty|floatformat:0 }} = {{ tipo.percent_qty|floatformat:1 }}%
+                                        </span>
+                                    </div>
+                                    <div style="display: none;">
+                                        <table class="producto-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="text-align: left;">Producto</th>
+                                                    <th>Plan Unid.</th>
+                                                    <th>Plan USD</th>
+                                                    <th>Desp. Unid.</th>
+                                                    <th>Desp. USD</th>
+                                                    <th>% Unid.</th>
+                                                    <th>% USD</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for producto in tipo.productos %}
+                                                <tr>
+                                                    <td>{{ producto.name }}</td>
+                                                    <td>{{ producto.plan_qty|floatformat:0 }}</td>
+                                                    <td class="usd">${{ producto.plan_usd|floatformat:2 }}</td>
+                                                    <td>{{ producto.salida_plan_qty|floatformat:0 }}</td>
+                                                    <td class="usd">${{ producto.salida_plan_usd|floatformat:2 }}</td>
+                                                    <td class="{% if producto.percent_qty >= 80 %}percent-high{% elif producto.percent_qty >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                                        {{ producto.percent_qty|floatformat:1 }}%
+                                                    </td>
+                                                    <td class="{% if producto.percent_usd >= 80 %}percent-high{% elif producto.percent_usd >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                                        {{ producto.percent_usd|floatformat:1 }}%
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-data">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🏪</div>
+                    <p>No hay datos por tienda disponibles.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        {% else %}
         <div class="card no-data">
             <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
             <p style="margin: 0; font-size: 16px; color: #5a5a5a;">
                 Seleccione las fechas de planificación y salidas para visualizar el análisis de cumplimiento.
             </p>
         </div>
-    {% elif not table %}
-        <div class="card no-data">
-            <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
-            <p style="margin: 0; font-size: 16px; color: #5a5a5a;">
-                No hay datos disponibles para las fechas seleccionadas.
-            </p>
-        </div>
-    {% else %}
-        {% for origen in table %}
-            <div class="card">
-                <table>
-                    <thead>
-                        <tr class="header">
-                            <th colspan="5">{{ origen.origin_name }}</th>
-                        </tr>
-                        <tr>
-                            <th style="text-align: left;">Sucursal Destino</th>
-                            <th style="text-align: left;">Grupo</th>
-                            <th>Planificado</th>
-                            <th>Enviado</th>
-                            <th>% Cumplimiento</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for destino in origen.destinos %}
-                            <tr class="dest-row">
-                                <td colspan="5">{{ destino.name }}</td>
-                            </tr>
-                            {% for grupo in destino.grupos %}
-                                <tr>
-                                    <td></td>
-                                    <td class="group-name">{{ grupo.name }}</td>
-                                    <td class="qty">{{ grupo.plan|floatformat:0 }}</td>
-                                    <td class="qty">{{ grupo.salida|floatformat:0 }}</td>
-                                    <td class="status-{{ grupo.status }}">
-                                        {% if grupo.percent is not None %}
-                                            {{ grupo.percent }}%
-                                        {% else %}
-                                            <span class="muted">Sin plan</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        {% empty %}
-                            <tr>
-                                <td colspan="5" class="muted" style="text-align: center;">
-                                    Sin datos para este origen
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% endfor %}
-    {% endif %}
+        {% endif %}
+    </div>
 
-    <div class="card">
-        <h4 style="margin-top: 0; font-size: 18px; font-weight: 500; color: #2c2c2c; margin-bottom: 20px;">Leyenda de Colores</h4>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 4px;"></div>
-                <span>≥100% - Completo</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #fff9c4; border: 1px solid #f57f17; border-radius: 4px;"></div>
-                <span>80-99% - Alto</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #ffebee; border: 1px solid #d84315; border-radius: 4px;"></div>
-                <span>50-79% - Medio</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #ffcdd2; border: 1px solid #c62828; border-radius: 4px;"></div>
-                <span>&lt;50% - Bajo</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #fafafa; border: 1px solid #999; border-radius: 4px;"></div>
-                <span>Sin entregas</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #f3e5f5; border: 1px solid #6a1b9a; border-radius: 4px;"></div>
-                <span>Sin plan</span>
-            </div>
-        </div>
-    </div>
-    </div>
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                
+                // Update tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update content
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('tab-' + tabName).classList.add('active');
+                
+                // Update hidden input
+                document.getElementById('tabInput').value = tabName;
+            });
+        });
+        
+        // Toggle CEDIS block
+        function toggleCedis(header) {
+            const content = header.nextElementSibling;
+            content.style.display = content.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Toggle Tipo block
+        function toggleTipo(header) {
+            const content = header.nextElementSibling;
+            content.style.display = content.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Toggle Categoria block
+        function toggleCategoria(header) {
+            const table = header.nextElementSibling;
+            table.style.display = table.style.display === 'none' ? 'table' : 'none';
+        }
+    </script>
 </body>
 </html>

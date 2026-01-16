@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Biblioteca de Sucursales</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #f5f5f5;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 32px;
+        }
+        .nav { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+        .nav a { color: #2c2c2c; text-decoration: none; font-weight: 500; font-size: 15px; }
+        .nav a:hover { color: #dc0000; }
+        .nav a.active { color: #dc0000; border-bottom: 2px solid #dc0000; }
+        h1 { font-size: 28px; font-weight: 300; color: #dc0000; margin-bottom: 8px; }
+        .subtitle { color: #666; margin-bottom: 24px; }
+        
+        .stats { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+        .stat-card { 
+            background: white; 
+            padding: 16px 24px; 
+            border-radius: 8px; 
+            border-left: 4px solid #dc0000;
+            min-width: 150px;
+        }
+        .stat-card.warning { border-left-color: #f57c00; }
+        .stat-card.success { border-left-color: #388e3c; }
+        .stat-number { font-size: 32px; font-weight: 600; color: #333; }
+        .stat-label { font-size: 13px; color: #666; }
+        
+        .section { background: white; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .section-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        
+        .alert { padding: 16px; border-radius: 6px; margin-bottom: 16px; }
+        .alert-warning { background: #fff3e0; border-left: 4px solid #f57c00; color: #e65100; }
+        .alert-info { background: #e3f2fd; border-left: 4px solid #1976d2; color: #1565c0; }
+        .alert-success { background: #e8f5e9; border-left: 4px solid #388e3c; color: #2e7d32; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #fafafa; font-weight: 600; color: #333; font-size: 13px; }
+        tr:hover { background: #f9f9f9; }
+        
+        .badge { 
+            display: inline-block; 
+            padding: 4px 10px; 
+            border-radius: 12px; 
+            font-size: 11px; 
+            font-weight: 600; 
+        }
+        .badge-warning { background: #fff3e0; color: #e65100; }
+        .badge-success { background: #e8f5e9; color: #2e7d32; }
+        .badge-info { background: #e3f2fd; color: #1565c0; }
+        
+        .btn { 
+            padding: 8px 16px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: 500; 
+            font-size: 13px; 
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-danger { background: #dc0000; color: white; }
+        .btn-danger:hover { background: #b80000; }
+        .btn-primary { background: #1976d2; color: white; }
+        .btn-primary:hover { background: #1565c0; }
+        .btn-success { background: #388e3c; color: white; }
+        .btn-success:hover { background: #2e7d32; }
+        .btn-outline { background: transparent; border: 1px solid #ccc; color: #666; }
+        .btn-outline:hover { background: #f5f5f5; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        
+        .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        
+        select, input[type="text"] { 
+            padding: 8px 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            font-size: 14px; 
+        }
+        select { min-width: 200px; }
+        
+        .row-sin-registrar { background: #fff8e1; }
+        .row-oficial { background: #ffffff; }
+        
+        .source-badges { display: flex; gap: 4px; }
+        
+        .search-box { margin-bottom: 16px; }
+        .search-box input { padding: 10px 16px; width: 300px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="nav">
+            <a href="/">Inicio</a>
+            <a href="/biblioteca/cedis/">📦 Biblioteca CEDIS</a>
+            <a href="/biblioteca/sucursales/" class="active">🏪 Biblioteca Sucursales</a>
+            <a href="/planificacion/normalizar/">Normalizar Planificación</a>
+            <a href="/salidas/normalizar/">Normalizar Salidas</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h1>🏪 Biblioteca de Sucursales (Tiendas)</h1>
+        <p class="subtitle">El sistema analiza tus datos crudos y te muestra todos los nombres de Sucursales encontrados. Tú decides cuáles son oficiales.</p>
+
+        <!-- Estadísticas -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_encontrados }}</div>
+                <div class="stat-label">Nombres encontrados</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-number">{{ oficiales|length }}</div>
+                <div class="stat-label">Ya registrados</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-number">{{ sin_registrar|length }}</div>
+                <div class="stat-label">Sin registrar</div>
+            </div>
+            <div class="stat-card" style="border-left-color: #1976d2;">
+                <div class="stat-number">{{ mapeados|length }}</div>
+                <div class="stat-label">Mapeados</div>
+            </div>
+        </div>
+
+        {% if sin_registrar %}
+        <!-- Alerta de nombres sin registrar -->
+        <div class="alert alert-warning">
+            <strong>⚠️ Hay {{ sin_registrar|length }} nombre(s) de Sucursales en tus datos que no están registrados.</strong><br>
+            Para cada uno, puedes: <strong>1)</strong> Crearlo como oficial, o <strong>2)</strong> Mapearlo a uno existente si es una variante.
+        </div>
+
+        <!-- Sección: Sin registrar -->
+        <div class="section">
+            <div class="section-title">
+                🔶 Nombres encontrados SIN REGISTRAR
+                <form method="post" style="margin-left: auto;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="crear_todos">
+                    {% for item in sin_registrar %}
+                    <input type="hidden" name="nombres[]" value="{{ item.nombre }}">
+                    {% endfor %}
+                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('¿Crear todos como oficiales?')">
+                        ✅ Crear todos como oficiales
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Búsqueda -->
+            <div class="search-box">
+                <input type="text" id="searchSinRegistrar" placeholder="🔍 Buscar..." onkeyup="filterTable('sinRegistrarTable', this.value)">
+            </div>
+            
+            <table id="sinRegistrarTable">
+                <thead>
+                    <tr>
+                        <th>Nombre en datos crudos</th>
+                        <th>Fuente</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in sin_registrar %}
+                    <tr class="row-sin-registrar">
+                        <td><strong>{{ item.nombre }}</strong></td>
+                        <td class="source-badges">
+                            {% if item.en_planificacion %}<span class="badge badge-info">Planificación</span>{% endif %}
+                            {% if item.en_salida %}<span class="badge badge-info">Salida</span>{% endif %}
+                        </td>
+                        <td class="actions">
+                            <!-- Crear como oficial -->
+                            <form method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="crear_oficial">
+                                <input type="hidden" name="nombre" value="{{ item.nombre }}">
+                                <input type="text" name="bpl_id" placeholder="BPL ID" style="width: 80px;">
+                                <button type="submit" class="btn btn-success btn-sm">✅ Crear oficial</button>
+                            </form>
+                            
+                            <!-- O mapear a existente -->
+                            <form method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="mapear">
+                                <input type="hidden" name="nombre_crudo" value="{{ item.nombre }}">
+                                <select name="sucursal_oficial_id">
+                                    <option value="">-- Mapear a --</option>
+                                    {% for s in sucursales_list %}
+                                    <option value="{{ s.id }}">{{ s.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-primary btn-sm">🔗 Mapear</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <strong>✅ ¡Perfecto!</strong> Todos los nombres de Sucursales en tus datos están registrados o mapeados.
+        </div>
+        {% endif %}
+
+        {% if mapeados %}
+        <!-- Sección: Mapeados -->
+        <div class="section">
+            <div class="section-title">🔗 Nombres MAPEADOS (alias guardados)</div>
+            <div class="alert alert-info" style="margin-bottom: 16px;">
+                Estos nombres en los datos crudos se traducirán automáticamente a la Sucursal oficial durante la normalización.
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre en datos crudos</th>
+                        <th>→</th>
+                        <th>Sucursal Oficial</th>
+                        <th>Fuente</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in mapeados %}
+                    <tr style="background: #e3f2fd;">
+                        <td><strong>{{ item.nombre }}</strong></td>
+                        <td style="text-align: center;">→</td>
+                        <td><span class="badge badge-success">{{ item.sucursal.name }}</span></td>
+                        <td class="source-badges">
+                            {% if item.en_planificacion %}<span class="badge badge-info">Planificación</span>{% endif %}
+                            {% if item.en_salida %}<span class="badge badge-info">Salida</span>{% endif %}
+                        </td>
+                        <td>
+                            <form method="post" style="display: inline;" onsubmit="return confirm('¿Eliminar este mapeo?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="eliminar_mapeo">
+                                <input type="hidden" name="mapeo_id" value="{{ item.mapeo.id }}">
+                                <button type="submit" class="btn btn-danger btn-sm">🗑️ Eliminar mapeo</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Sección: Oficiales encontrados en datos -->
+        <div class="section">
+            <div class="section-title">✅ Sucursales Oficiales (encontradas en tus datos)</div>
+            
+            <div class="search-box">
+                <input type="text" id="searchOficiales" placeholder="🔍 Buscar..." onkeyup="filterTable('oficialesTable', this.value)">
+            </div>
+            
+            {% if oficiales %}
+            <table id="oficialesTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>BPL ID</th>
+                        <th>Nombre</th>
+                        <th>En datos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in oficiales %}
+                    <tr>
+                        <td>{{ item.sucursal.id }}</td>
+                        <td>{{ item.sucursal.bpl_id }}</td>
+                        <td><strong>{{ item.nombre }}</strong></td>
+                        <td class="source-badges">
+                            {% if item.en_planificacion %}<span class="badge badge-success">Planificación</span>{% endif %}
+                            {% if item.en_salida %}<span class="badge badge-success">Salida</span>{% endif %}
+                        </td>
+                        <td>
+                            <form method="post" style="display: inline;" onsubmit="return confirm('¿Eliminar esta sucursal?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="eliminar_sucursal">
+                                <input type="hidden" name="sucursal_id" value="{{ item.sucursal.id }}">
+                                <button type="submit" class="btn btn-danger btn-sm">🗑️ Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="color: #999; text-align: center; padding: 24px;">No hay sucursales oficiales encontradas en tus datos.</p>
+            {% endif %}
+        </div>
+
+        <!-- Todas las sucursales en BD -->
+        {% if sucursales_list %}
+        <div class="section">
+            <div class="section-title">📋 Todas las Sucursales en la base de datos ({{ sucursales_list|length }})</div>
+            
+            <div class="search-box">
+                <input type="text" id="searchTodas" placeholder="🔍 Buscar..." onkeyup="filterTable('todasTable', this.value)">
+            </div>
+            
+            <table id="todasTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>BPL ID</th>
+                        <th>Nombre</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sucursales_list %}
+                    <tr>
+                        <td>{{ s.id }}</td>
+                        <td>{{ s.bpl_id }}</td>
+                        <td>{{ s.name }}</td>
+                        <td>
+                            <form method="post" style="display: inline;" onsubmit="return confirm('¿Eliminar esta sucursal?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="eliminar_sucursal">
+                                <input type="hidden" name="sucursal_id" value="{{ s.id }}">
+                                <button type="submit" class="btn btn-danger btn-sm">🗑️ Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Crear nuevo manualmente -->
+        <div class="section">
+            <div class="section-title">➕ Crear nueva Sucursal manualmente</div>
+            <form method="post" class="actions">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="crear_oficial">
+                <input type="text" name="nombre" placeholder="Nombre de la Sucursal" required style="width: 250px;">
+                <input type="text" name="bpl_id" placeholder="BPL ID" style="width: 100px;">
+                <button type="submit" class="btn btn-success">Crear</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function filterTable(tableId, filter) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const rows = table.getElementsByTagName('tr');
+            const lowerFilter = filter.toLowerCase();
+            
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let found = false;
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j].innerText.toLowerCase().includes(lowerFilter)) {
+                        found = true;
+                        break;
+                    }
+                }
+                rows[i].style.display = found ? '' : 'none';
+            }
+        }
+    </script>
+</body>
+</html>

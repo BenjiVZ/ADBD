@@ -37,6 +37,7 @@ class HomeView(View):
         return render(request, self.template_name)
 
     def post(self, request, *args, **kwargs):
+        file_type = request.POST.get("file_type", "maestro")  # 'maestro' o 'productos_pvp'
         upload = request.FILES.get("file")
         if not upload:
             return render(request, self.template_name, {"error": "Selecciona un archivo .xlsx"})
@@ -51,9 +52,19 @@ class HomeView(View):
 
         summary = {
             "products": {"created": 0, "updated": 0, "skipped": 0},
-            "pvp": {"created": 0, "updated": 0, "skipped": 0, "missing_product": 0},
+            "pvp": {"created": 0, "updated": 0, "skipped": 0, "missing_product": 0, "invalid_price": 0},
         }
 
+        # Procesar según el tipo de archivo
+        if file_type == "productos_pvp":
+            summary = self._process_productos_pvp(workbook, summary)
+        else:
+            summary = self._process_maestro_original(workbook, summary)
+        
+        return render(request, self.template_name, {"summary": summary})
+
+    def _process_maestro_original(self, workbook, summary):
+        """Procesa el formato original: 'Maestro de Productos' y 'PVP'"""
         # Procesa Maestro de Productos
         if "Maestro de Productos" in workbook.sheetnames:
             sheet = workbook["Maestro de Productos"]
@@ -113,17 +124,19 @@ class HomeView(View):
                         continue
                     try:
                         price = Decimal(str(price_raw)) if price_raw not in (None, "") else Decimal("0")
+                        if price <= 0:
+                            summary["pvp"]["invalid_price"] += 1
+                            # Continuar pero marcar como precio inválido
                     except (InvalidOperation, TypeError):
                         summary["pvp"]["skipped"] += 1
                         continue
                     product = Product.objects.filter(code=sku).first()
-                    if not product:
-                        summary["pvp"]["missing_product"] += 1
-                        continue
                     obj, created = Pvp.objects.update_or_create(
                         sku=sku,
                         defaults={"product": product, "description": description, "price": price},
                     )
+                    if not product:
+                        summary["pvp"]["missing_product"] += 1
                     if created:
                         summary["pvp"]["created"] += 1
                     else:
@@ -131,4 +144,86 @@ class HomeView(View):
         else:
             summary["pvp"]["skipped"] = "Hoja 'PVP' no encontrada"
 
-        return render(request, self.template_name, {"summary": summary})
+        return summary
+
+    def _process_productos_pvp(self, workbook, summary):
+        """Procesa el formato de Maestros: 'Productos' e 'PVP' (ItemCode, Precio)"""
+        # Procesa hoja "Productos"
+        if "Productos" in workbook.sheetnames:
+            sheet = workbook["Productos"]
+            rows = list(sheet.iter_rows(values_only=True))
+            if rows:
+                headers = rows[0]
+                indexes = _index_map(headers)
+                mapping = {
+                    "code": indexes.get("itemcode"),
+                    "name": indexes.get("itemname"),
+                    "group": indexes.get("grupo"),
+                    "manufacturer": indexes.get("ds_marca"),  # Marca como manufacturer
+                    "category": indexes.get("u_categoria"),
+                }
+                for row in rows[1:]:
+                    code = _value(row, mapping["code"])
+                    name = _value(row, mapping["name"])
+                    if not code or not name:
+                        summary["products"]["skipped"] += 1
+                        continue
+                    defaults = {
+                        "name": name,
+                        "group": _value(row, mapping["group"]) or "",
+                        "manufacturer": _value(row, mapping["manufacturer"]) or "",
+                        "category": _value(row, mapping["category"]) or "",
+                        "subcategory": "",  # No viene en este formato
+                        "size": "",  # No viene en este formato
+                    }
+                    obj, created = Product.objects.update_or_create(code=code, defaults=defaults)
+                    if created:
+                        summary["products"]["created"] += 1
+                    else:
+                        summary["products"]["updated"] += 1
+        else:
+            summary["products"]["skipped"] = "Hoja 'Productos' no encontrada"
+
+        # Procesa hoja "PVP"
+        if "PVP" in workbook.sheetnames:
+            sheet = workbook["PVP"]
+            rows = list(sheet.iter_rows(values_only=True))
+            if rows:
+                headers = rows[0]
+                indexes = _index_map(headers)
+                mapping = {
+                    "sku": indexes.get("itemcode"),
+                    "price": indexes.get("precio"),
+                }
+                for row in rows[1:]:
+                    sku = _value(row, mapping["sku"])
+                    price_raw = _value(row, mapping["price"])
+                    if not sku:
+                        summary["pvp"]["skipped"] += 1
+                        continue
+                    try:
+                        price = Decimal(str(price_raw)) if price_raw not in (None, "") else Decimal("0")
+                        if price <= 0:
+                            summary["pvp"]["invalid_price"] += 1
+                            # Continuar pero marcar como precio inválido
+                    except (InvalidOperation, TypeError):
+                        summary["pvp"]["skipped"] += 1
+                        continue
+                    # Buscar producto por code = sku
+                    product = Product.objects.filter(code=sku).first()
+                    # Usar el SKU como descripción si no hay producto vinculado
+                    description = product.name if product else sku
+                    obj, created = Pvp.objects.update_or_create(
+                        sku=sku,
+                        defaults={"product": product, "description": description, "price": price},
+                    )
+                    if not product:
+                        summary["pvp"]["missing_product"] += 1
+                    if created:
+                        summary["pvp"]["created"] += 1
+                    else:
+                        summary["pvp"]["updated"] += 1
+        else:
+            summary["pvp"]["skipped"] = "Hoja 'PVP' no encontrada"
+
+        return summary

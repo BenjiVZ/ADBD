@@ -60,8 +60,12 @@
             border: 1px solid #e8e8e8;
             border-radius: 8px;
             padding: 32px;
-            max-width: 600px;
             margin-bottom: 32px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            border-color: #dc0000;
+            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.1);
         }
         form label {
             display: block;
@@ -155,20 +159,49 @@
     </header>
     <div class="container">
         <h1>Cargar Excel</h1>
-        <p class="subtitle">Sube un archivo .xlsx con las hojas "Maestro de Productos" y "PVP" para poblar las tablas.</p>
+        <p class="subtitle">Sube un archivo .xlsx con maestros de productos y precios.</p>
 
-        <div class="card" id="upload">
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <label for="file">Archivo Excel (.xlsx):</label><br />
-            <input type="file" id="file" name="file" accept=".xlsx" required />
-            <br /><br />
-            <button type="submit">Subir y procesar</button>
-        </form>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 32px;">
+            <!-- Formulario 1: Maestro original -->
+            <div class="card" id="upload-maestro">
+                <h2 style="font-size: 20px; font-weight: 500; color: #dc0000; margin: 0 0 8px 0;">Formato: Maestro de Productos + PVP</h2>
+                <p style="font-size: 13px; color: #5a5a5a; margin-bottom: 20px;">
+                    <strong>Hojas esperadas:</strong><br>
+                    • "Maestro de Productos": Cod Artículo, Nom Artículo, Grupo, Fabricante, etc.<br>
+                    • "PVP": SKU, Descripción, PVP
+                </p>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="file_type" value="maestro">
+                    <label for="file-maestro">Archivo Excel (.xlsx):</label><br />
+                    <input type="file" id="file-maestro" name="file" accept=".xlsx" required />
+                    <br /><br />
+                    <button type="submit">Subir y procesar</button>
+                </form>
+            </div>
+
+            <!-- Formulario 2: Productos y PVP -->
+            <div class="card" id="upload-productos">
+                <h2 style="font-size: 20px; font-weight: 500; color: #dc0000; margin: 0 0 8px 0;">Formato: Productos + PVP (Maestros)</h2>
+                <p style="font-size: 13px; color: #5a5a5a; margin-bottom: 20px;">
+                    <strong>Hojas esperadas:</strong><br>
+                    • "Productos": itemcode, itemname, GRUPO, U_CATEGORIA, DS_MARCA<br>
+                    • "PVP": ItemCode, Precio
+                </p>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="file_type" value="productos_pvp">
+                    <label for="file-productos">Archivo Excel (.xlsx):</label><br />
+                    <input type="file" id="file-productos" name="file" accept=".xlsx" required />
+                    <br /><br />
+                    <button type="submit" style="background: #2c2c2c;">Subir y procesar</button>
+                </form>
+            </div>
+        </div>
+
         {% if error %}
             <div class="error">{{ error }}</div>
         {% endif %}
-    </div>
 
     {% if summary %}
         <div class="summary">
@@ -186,6 +219,7 @@
                 <tr><td>Actualizado</td><td>{{ summary.pvp.updated }}</td></tr>
                 <tr><td>Omitido</td><td>{{ summary.pvp.skipped }}</td></tr>
                 <tr><td>Sin producto</td><td>{{ summary.pvp.missing_product }}</td></tr>
+                <tr><td>Precio inválido (≤0)</td><td>{{ summary.pvp.invalid_price }}</td></tr>
             </table>
         </div>
     {% endif %}

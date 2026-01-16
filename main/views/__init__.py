@@ -9,6 +9,8 @@ from .salida_upload import SalidaUploadView
 from .upload_menu import UploadMenuView
 from .tablero_normalizado import TableroNormalizadoView
 from .error_resolver import PlanificacionErrorResolverView, SalidaErrorResolverView
+from .admin_maestros import AdminCedisView, AdminSucursalesView
+from .biblioteca_maestros import BibliotecaCedisView, BibliotecaSucursalesView
 
 __all__ = [
 	"HomeView",
@@ -21,4 +23,10 @@ __all__ = [
 	"TableroNormalizadoView",
 	"PvpIssuesView",
 	"UploadMenuView",
+	"PlanificacionErrorResolverView",
+	"SalidaErrorResolverView",
+	"AdminCedisView",
+	"AdminSucursalesView",
+	"BibliotecaCedisView",
+	"BibliotecaSucursalesView",
 ]

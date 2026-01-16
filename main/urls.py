@@ -13,6 +13,10 @@ from .views import (
     UploadMenuView,
     PlanificacionErrorResolverView,
     SalidaErrorResolverView,
+    AdminCedisView,
+    AdminSucursalesView,
+    BibliotecaCedisView,
+    BibliotecaSucursalesView,
 )
 
 urlpatterns = [
@@ -28,4 +32,10 @@ urlpatterns = [
     path("tablero/normalizado/", TableroNormalizadoView.as_view(), name="tablero_normalizado"),
     path("faltantes/", MissingProductsView.as_view(), name="missing_products"),
     path("pvp/faltantes/", PvpIssuesView.as_view(), name="pvp_issues"),
+    # Admin maestros (legacy)
+    path("admin/cedis/", AdminCedisView.as_view(), name="admin_cedis"),
+    path("admin/sucursales/", AdminSucursalesView.as_view(), name="admin_sucursales"),
+    # Biblioteca - Investigación desde datos crudos
+    path("biblioteca/cedis/", BibliotecaCedisView.as_view(), name="biblioteca_cedis"),
+    path("biblioteca/sucursales/", BibliotecaSucursalesView.as_view(), name="biblioteca_sucursales"),
 ]

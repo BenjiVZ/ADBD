@@ -9,6 +9,7 @@ from .cendis import Cendis
 from .sucursal import Sucursal
 from .salida import Salida
 from .salida_normalizada import SalidaNormalizada
+from .mapeos import MapeoCedis, MapeoSucursal
 
 __all__ = [
 	"DataRecord",
@@ -23,4 +24,6 @@ __all__ = [
 	"Sucursal",
 	"Salida",
 	"SalidaNormalizada",
+	"MapeoCedis",
+	"MapeoSucursal",
 ]

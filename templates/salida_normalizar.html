@@ -238,6 +238,16 @@
                     Normalizar pendientes
                 </button>
             </form>
+            {% if selected_date %}
+            <form method="post" style="display: inline;" onsubmit="return confirm('¿Limpiar y re-normalizar TODA la fecha {{ selected_date }}?');">
+                {% csrf_token %}
+                <input type="hidden" name="fecha_salida" value="{{ selected_date }}" />
+                <input type="hidden" name="action" value="reset_date" />
+                <button class="btn" type="submit" style="background: #f57c00;">
+                    🔄 Limpiar y re-normalizar {{ selected_date }}
+                </button>
+            </form>
+            {% endif %}
             {% if summary.error > 0 %}
             <a href="/salidas/errores/" class="btn btn-secondary">
                 Resolver {{ summary.error }} errores
@@ -245,12 +255,24 @@
             {% endif %}
         </div>
 
+        {% if message %}
+        <div class="info-card" style="background: #e8f5e9; border-color: #4caf50;">
+            {{ message }}
+        </div>
+        {% endif %}
+
         {% if ran %}
         <div class="info-card">
             <div>Procesados: <strong>{{ run_result.processed }}</strong></div>
             <div class="ok">Creados: {{ run_result.created }}</div>
             <div class="ok">Actualizados: {{ run_result.updated }}</div>
             <div class="error">Errores: {{ run_result.errors }}</div>
+            {% if run_result.errors > 0 and summary.error == 0 %}
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-top: 12px;">
+                ⚠️ Los {{ run_result.errors }} errores son de <strong>otras fechas</strong>, no de {{ selected_date }}.
+                <a href="/salidas/errores/" style="color: #dc0000; font-weight: 600; text-decoration: underline;">Ver todos los errores →</a>
+            </div>
+            {% endif %}
         </div>
         {% endif %}
 

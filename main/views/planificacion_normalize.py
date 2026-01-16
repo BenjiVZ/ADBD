@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views import View
 
-from ..models import Cendis, Planificacion, PlanificacionNormalizada, PlanningEntry, Product, Sucursal
+from ..models import Cendis, Planificacion, PlanificacionNormalizada, PlanningEntry, Product, Sucursal, MapeoCedis, MapeoSucursal
 
 
 class PlanificacionNormalizeView(View):
@@ -47,10 +47,29 @@ class PlanificacionNormalizeView(View):
         self._sync_from_legacy()
         selected_month = self._selected_month(request)
         months = self._months()
+        
+        # Verificar si es una acción de limpieza
+        action = request.POST.get('action')
+        reset_message = None
+        if action == 'reset_month' and selected_month:
+            # Limpiar normalizaciones de este mes específico
+            
+            # Resetear estado de Planificacion de este mes
+            reset_count = Planificacion.objects.filter(plan_month=selected_month).update(
+                normalize_status='pending',
+                normalize_notes='',
+                normalized_at=None
+            )
+            
+            # Eliminar registros normalizados de este mes
+            deleted_count = PlanificacionNormalizada.objects.filter(plan_month=selected_month).delete()[0]
+            
+            print(f"🗑️ Limpiado mes {selected_month}: {reset_count} registros reseteados, {deleted_count} normalizados eliminados")
+            reset_message = f"✅ Mes {selected_month.strftime('%Y-%m')} limpiado: {reset_count} registros listos para re-normalizar"
+            # Continuar con la normalización automáticamente...
 
+        # Normalizar TODOS los meses - no filtrar por mes seleccionado
         to_process = Planificacion.objects.filter(normalize_status__in=["pending", "error"])
-        if selected_month:
-            to_process = to_process.filter(plan_month=selected_month)
         
         # Pre-cargar datos en memoria para evitar N+1 queries
         print(f"\n🔄 INICIANDO NORMALIZACIÓN")
@@ -60,16 +79,28 @@ class PlanificacionNormalizeView(View):
         cendis_list = Cendis.objects.all()
         products = Product.objects.all()
         
+        # Cargar mapeos
+        mapeos_cedis = MapeoCedis.objects.select_related('cedis_oficial').all()
+        mapeos_sucursales = MapeoSucursal.objects.select_related('sucursal_oficial').all()
+        
         print(f"✅ Cargadas {len(sucursales)} sucursales")
         print(f"✅ Cargados {len(cendis_list)} CENDIS")
         print(f"✅ Cargados {len(products)} productos")
+        print(f"✅ Cargados {len(mapeos_cedis)} mapeos de CEDIS")
+        print(f"✅ Cargados {len(mapeos_sucursales)} mapeos de Sucursales")
         
         sucursales_map = {s.name.lower(): s for s in sucursales}
         cendis_map = {s.origin.lower(): s for s in cendis_list}
         products_map = {p.code.lower(): p for p in products}
         
+        # Mapeos: nombre_crudo -> entidad_oficial
+        mapeos_cedis_dict = {m.nombre_crudo.lower(): m.cedis_oficial for m in mapeos_cedis}
+        mapeos_sucursales_dict = {m.nombre_crudo.lower(): m.sucursal_oficial for m in mapeos_sucursales}
+        
         print(f"\n📋 CENDIS disponibles: {list(cendis_map.keys())}")
         print(f"📋 Sucursales disponibles (primeras 10): {list(sucursales_map.keys())[:10]}")
+        print(f"🔗 Mapeos CEDIS: {list(mapeos_cedis_dict.keys())}")
+        print(f"🔗 Mapeos Sucursales (primeras 10): {list(mapeos_sucursales_dict.keys())[:10]}")
         
         # Obtener registros normalizados existentes de una vez
         existing_normalized = {
@@ -105,9 +136,15 @@ class PlanificacionNormalizeView(View):
                 sucursal = None
                 if raw.sucursal:
                     sucursal_key = raw.sucursal.strip().lower()
+                    # 1. Buscar nombre exacto
                     sucursal = sucursales_map.get(sucursal_key)
+                    # 2. Si no existe, buscar en mapeos
+                    if not sucursal:
+                        sucursal = mapeos_sucursales_dict.get(sucursal_key)
+                    
                     if record_count <= 5:
-                        print(f"   🏢 Buscando sucursal (tienda): '{sucursal_key}' -> {'✅ Encontrada' if sucursal else '❌ NO encontrada'}")
+                        status = '✅ Encontrada' if sucursal else '❌ NO encontrada'
+                        print(f"   🏢 Buscando sucursal (tienda): '{sucursal_key}' -> {status}")
                     if not sucursal:
                         issues.append(f"Sucursal (tienda) destino no encontrada: {raw.sucursal}")
                 else:
@@ -119,9 +156,15 @@ class PlanificacionNormalizeView(View):
                 cedis_origen = None
                 if raw.cendis:
                     cendis_key = raw.cendis.strip().lower()
+                    # 1. Buscar nombre exacto
                     cedis_origen = cendis_map.get(cendis_key)
+                    # 2. Si no existe, buscar en mapeos
+                    if not cedis_origen:
+                        cedis_origen = mapeos_cedis_dict.get(cendis_key)
+                    
                     if record_count <= 5:
-                        print(f"   🏭 Buscando CEDIS (almacén): '{cendis_key}' -> {'✅ Encontrado' if cedis_origen else '❌ NO encontrado'}")
+                        status = '✅ Encontrado' if cedis_origen else '❌ NO encontrado'
+                        print(f"   🏭 Buscando CEDIS (almacén): '{cendis_key}' -> {status}")
                     if not cedis_origen:
                         issues.append(f"CEDIS (almacén) origen no encontrado: {raw.cendis}")
                 else:
@@ -237,18 +280,24 @@ class PlanificacionNormalizeView(View):
             "errors": errors_count,
         }
 
+        context = {
+            "summary": summary,
+            "errors": errors,
+            "pending": pending,
+            "ran": True,
+            "run_result": run_result,
+            "months": months,
+            "selected_month": selected_month,
+        }
+        
+        # Agregar mensaje de reset si existe
+        if reset_message:
+            context["message"] = reset_message
+
         return render(
             request,
             self.template_name,
-            {
-                "summary": summary,
-                "errors": errors,
-                "pending": pending,
-                "ran": True,
-                "run_result": run_result,
-                "months": months,
-                "selected_month": selected_month,
-            },
+            context,
         )
 
     @staticmethod

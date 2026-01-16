@@ -1,8 +1,9 @@
 from django.db.models import Count, Q
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views import View
+from django.contrib import messages
 
-from ..models import Pvp
+from ..models import Pvp, Product
 
 
 class PvpIssuesView(View):
@@ -58,3 +59,44 @@ class PvpIssuesView(View):
                 "hidden_fields": hidden,
             },
         )
+
+    def post(self, request, *args, **kwargs):
+        """Maneja acciones de corrección"""
+        action = request.POST.get("action")
+        
+        if action == "auto_link_products":
+            # Vincular automáticamente PVPs sin producto donde SKU = Product.code
+            orphans = Pvp.objects.filter(product__isnull=True)
+            linked_count = 0
+            
+            for pvp in orphans:
+                product = Product.objects.filter(code=pvp.sku).first()
+                if product:
+                    pvp.product = product
+                    pvp.save()
+                    linked_count += 1
+            
+            messages.success(request, f"✅ {linked_count} PVPs vinculados automáticamente a productos.")
+            return redirect("pvp_issues")
+        
+        elif action == "delete_duplicates":
+            # Eliminar duplicados manteniendo solo el primer registro
+            duplicate_keys = (
+                Pvp.objects.values("sku")
+                .annotate(count=Count("id"))
+                .filter(count__gt=1)
+            )
+            deleted_count = 0
+            
+            for dup in duplicate_keys:
+                sku = dup["sku"]
+                records = list(Pvp.objects.filter(sku=sku).order_by("id"))
+                # Mantener el primero, eliminar el resto
+                for record in records[1:]:
+                    record.delete()
+                    deleted_count += 1
+            
+            messages.success(request, f"✅ {deleted_count} registros duplicados eliminados.")
+            return redirect("pvp_issues")
+        
+        return self.get(request, *args, **kwargs)

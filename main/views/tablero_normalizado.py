@@ -1,4 +1,5 @@
 import datetime
+from collections import defaultdict
 from decimal import Decimal
 
 from django.shortcuts import render
@@ -6,7 +7,7 @@ from django.views import View
 from django.http import HttpResponse
 import csv
 
-from ..models import PlanificacionNormalizada, SalidaNormalizada
+from ..models import PlanificacionNormalizada, SalidaNormalizada, Pvp
 
 
 class TableroNormalizadoView(View):
@@ -16,12 +17,11 @@ class TableroNormalizadoView(View):
         # Obtener fechas seleccionadas
         plan_date = self._selected_plan_date(request)
         salida_date = self._selected_salida_date(request)
-        selected_origin = self._selected_origin(request)
+        active_tab = request.GET.get("tab", "cumplimiento")
         
         # Obtener fechas disponibles para los selectores
         plan_dates = self._available_plan_dates()
         salida_dates = self._available_salida_dates()
-        origin_choices = self._origin_choices()
         
         # Si no hay fechas seleccionadas, usar las más recientes
         if not plan_date and plan_dates:
@@ -29,19 +29,25 @@ class TableroNormalizadoView(View):
         if not salida_date and salida_dates:
             salida_date = salida_dates[0]
         
-        # Obtener datos de plan y salidas para las fechas específicas
-        plan_data = self._plan_by_dest_group(plan_date) if plan_date else {}
-        salida_data = self._salidas_by_origin_dest_group(salida_date, selected_origin) if salida_date else {}
+        # Pre-cargar precios PVP
+        pvp_map = {p.sku.lower(): p.price for p in Pvp.objects.all()}
         
-        # Construir tabla de comparación
-        table = self._build_comparison_table(plan_data, salida_data, plan_date, salida_date)
+        # Generar datos para cada pestaña
+        resumen_cumplimiento = self._build_resumen_cumplimiento(plan_date, salida_date, pvp_map)
+        resumen_cedis = self._build_resumen_cedis(plan_date, salida_date, pvp_map)
+        resumen_tiendas = self._build_resumen_tiendas(plan_date, salida_date, pvp_map)
         
-        # Calcular resumen general
-        summary = self._calculate_summary(table)
+        # Totales nacionales
+        nacional = self._calculate_nacional(resumen_tiendas)
         
         # Export CSV
-        if request.GET.get("export") == "csv":
-            return self._export_csv(table, plan_date, salida_date)
+        export = request.GET.get("export")
+        if export == "cumplimiento":
+            return self._export_cumplimiento_csv(resumen_cumplimiento, plan_date, salida_date)
+        elif export == "cedis":
+            return self._export_cedis_csv(resumen_cedis, plan_date, salida_date)
+        elif export == "tiendas":
+            return self._export_tiendas_csv(resumen_tiendas, plan_date, salida_date)
 
         return render(
             request,
@@ -51,10 +57,11 @@ class TableroNormalizadoView(View):
                 "salida_date": salida_date,
                 "plan_dates": plan_dates,
                 "salida_dates": salida_dates,
-                "selected_origin": selected_origin,
-                "origin_choices": origin_choices,
-                "table": table,
-                "summary": summary,
+                "active_tab": active_tab,
+                "resumen_cumplimiento": resumen_cumplimiento,
+                "resumen_cedis": resumen_cedis,
+                "resumen_tiendas": resumen_tiendas,
+                "nacional": nacional,
             },
         )
 
@@ -78,16 +85,8 @@ class TableroNormalizadoView(View):
             except ValueError:
                 return None
         return None
-
-    def _selected_origin(self, request):
-        raw = request.GET.get("origin") or request.POST.get("origin")
-        try:
-            return int(raw) if raw else None
-        except (TypeError, ValueError):
-            return None
     
     def _available_plan_dates(self):
-        """Obtener fechas disponibles de planificación ordenadas descendente"""
         return list(
             PlanificacionNormalizada.objects
             .values_list("plan_month", flat=True)
@@ -96,7 +95,6 @@ class TableroNormalizadoView(View):
         )
     
     def _available_salida_dates(self):
-        """Obtener fechas disponibles de salidas ordenadas descendente"""
         return list(
             SalidaNormalizada.objects
             .values_list("fecha_salida", flat=True)
@@ -104,273 +102,597 @@ class TableroNormalizadoView(View):
             .order_by("-fecha_salida")
         )
 
-    def _plan_by_dest_group(self, plan_date):
-        """Retorna plan agrupado por origen -> destino -> grupo para una fecha específica"""
+    def _get_price(self, item_code, pvp_map):
+        """Obtener precio de un producto"""
+        if not item_code:
+            return Decimal("0")
+        return pvp_map.get(item_code.lower(), Decimal("0"))
+
+    def _build_resumen_cumplimiento(self, plan_date, salida_date, pvp_map):
+        """
+        Construye resumen jerárquico: CEDIS → Tipo Carga → Categoría → Productos
+        """
         if not plan_date:
-            return {}
+            return []
         
-        result = {}
-        qs = (
+        # Obtener planificaciones
+        plan_qs = (
             PlanificacionNormalizada.objects
             .filter(plan_month=plan_date)
-            .select_related("product", "sucursal", "cedis_origen")
+            .select_related("cedis_origen", "product")
         )
         
-        for row in qs:
-            # Origen (CEDIS) - si no tiene, usar "TODOS"
-            if row.cedis_origen:
-                key_origin = (row.cedis_origen.id, row.cedis_origen.origin)
-            else:
-                key_origin = (None, "TODOS LOS CEDIS")
+        # Obtener salidas
+        salida_qs = (
+            SalidaNormalizada.objects
+            .filter(fecha_salida=salida_date)
+            .select_related("cedis_origen", "product")
+        ) if salida_date else SalidaNormalizada.objects.none()
+        
+        # Agrupar planificaciones: cedis -> tipo_carga -> categoria -> producto -> qty
+        plan_data = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(Decimal))))
+        for p in plan_qs:
+            cedis_name = p.cedis_origen.origin if p.cedis_origen else "SIN CEDIS"
+            tipo = p.tipo_carga.strip() if p.tipo_carga else "SIN TIPO"
+            categoria = p.product.category.strip() if p.product and p.product.category else "SIN CATEGORÍA"
+            producto = f"{p.item_code} - {p.item_name}" if p.item_code and p.item_name else p.item_code or p.item_name or "SIN NOMBRE"
+            qty = Decimal(p.a_despachar_total or 0)
+            plan_data[cedis_name][tipo][categoria][producto] += qty
+        
+        # Mapear salidas a planificaciones para obtener tipo_carga
+        plan_lookup = {}
+        for p in plan_qs:
+            key = (
+                p.cedis_origen.id if p.cedis_origen else None,
+                p.item_code.lower() if p.item_code else "",
+                p.sucursal_id
+            )
+            plan_lookup[key] = p.tipo_carga.strip() if p.tipo_carga else "SIN TIPO"
+        
+        # Agrupar salidas: cedis -> tipo_carga -> categoria -> producto -> qty
+        salida_data = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(Decimal))))
+        for s in salida_qs:
+            cedis_name = s.cedis_origen.origin if s.cedis_origen else "SIN CEDIS"
+            categoria = s.product.category.strip() if s.product and s.product.category else "SIN CATEGORÍA"
+            producto = f"{s.sku} - {s.descripcion}" if s.sku and s.descripcion else s.sku or s.descripcion or "SIN NOMBRE"
+            qty = Decimal(s.cantidad or 0)
             
-            # Destino
-            dest = row.sucursal
-            if not dest:
-                continue
+            # Buscar tipo_carga de la planificación correspondiente
+            key = (
+                s.cedis_origen_id,
+                s.sku.lower() if s.sku else "",
+                s.sucursal_destino_id
+            )
+            tipo = plan_lookup.get(key, "NO PLANIFICADO")
             
-            group = (row.product.group if row.product and row.product.group else "SIN GRUPO").strip() or "SIN GRUPO"
-            qty = Decimal(row.a_despachar_total or 0)
+            salida_data[cedis_name][tipo][categoria][producto] += qty
+        
+        # Construir estructura de resultado
+        result = []
+        all_cedis = sorted(set(plan_data.keys()) | set(salida_data.keys()))
+        
+        for cedis_name in all_cedis:
+            cedis_plan = plan_data.get(cedis_name, {})
+            cedis_salida = salida_data.get(cedis_name, {})
             
-            origin_bucket = result.setdefault(key_origin, {})
-            dest_bucket = origin_bucket.setdefault(dest.id, {
-                "name": dest.name,
-                "groups": {}
+            all_tipos = sorted(set(cedis_plan.keys()) | set(cedis_salida.keys()))
+            
+            tipos_list = []
+            cedis_total_plan = Decimal("0")
+            cedis_total_salida = Decimal("0")
+            
+            for tipo in all_tipos:
+                tipo_plan = cedis_plan.get(tipo, {})
+                tipo_salida = cedis_salida.get(tipo, {})
+                
+                all_categorias = sorted(set(tipo_plan.keys()) | set(tipo_salida.keys()))
+                
+                categorias_list = []
+                tipo_total_plan = Decimal("0")
+                tipo_total_salida = Decimal("0")
+                
+                for categoria in all_categorias:
+                    categoria_plan = tipo_plan.get(categoria, {})
+                    categoria_salida = tipo_salida.get(categoria, {})
+                    
+                    all_productos = sorted(set(categoria_plan.keys()) | set(categoria_salida.keys()))
+                    
+                    productos_list = []
+                    categoria_total_plan = Decimal("0")
+                    categoria_total_salida = Decimal("0")
+                    
+                    for producto in all_productos:
+                        plan_qty = categoria_plan.get(producto, Decimal("0"))
+                        salida_qty = categoria_salida.get(producto, Decimal("0"))
+                        
+                        percent = self._calc_percent(salida_qty, plan_qty)
+                        
+                        productos_list.append({
+                            "name": producto,
+                            "plan": plan_qty,
+                            "salida": salida_qty,
+                            "percent": percent,
+                        })
+                        
+                        categoria_total_plan += plan_qty
+                        categoria_total_salida += salida_qty
+                    
+                    # Ordenar productos de mayor a menor por porcentaje de cumplimiento
+                    productos_list.sort(key=lambda x: x["percent"], reverse=True)
+                    
+                    categoria_percent = self._calc_percent(categoria_total_salida, categoria_total_plan)
+                    
+                    categorias_list.append({
+                        "name": categoria,
+                        "plan": categoria_total_plan,
+                        "salida": categoria_total_salida,
+                        "percent": categoria_percent,
+                        "productos": productos_list,
+                    })
+                    
+                    tipo_total_plan += categoria_total_plan
+                    tipo_total_salida += categoria_total_salida
+                
+                # Ordenar categorías de mayor a menor por porcentaje de cumplimiento
+                categorias_list.sort(key=lambda x: x["percent"], reverse=True)
+                
+                tipo_percent = self._calc_percent(tipo_total_salida, tipo_total_plan)
+                
+                tipos_list.append({
+                    "name": tipo,
+                    "plan": tipo_total_plan,
+                    "salida": tipo_total_salida,
+                    "percent": tipo_percent,
+                    "categorias": categorias_list,
+                })
+                
+                cedis_total_plan += tipo_total_plan
+                cedis_total_salida += tipo_total_salida
+            
+            # Ordenar tipos de mayor a menor por porcentaje de cumplimiento
+            tipos_list.sort(key=lambda x: x["percent"], reverse=True)
+            
+            cedis_percent = self._calc_percent(cedis_total_salida, cedis_total_plan)
+            
+            result.append({
+                "name": cedis_name,
+                "plan": cedis_total_plan,
+                "salida": cedis_total_salida,
+                "percent": cedis_percent,
+                "tipos": tipos_list,
             })
-            dest_bucket["groups"].setdefault(group, Decimal("0"))
-            dest_bucket["groups"][group] += qty
+        
+        # Ordenar CEDIS de mayor a menor por porcentaje de cumplimiento
+        result.sort(key=lambda x: x["percent"], reverse=True)
         
         return result
 
-    def _salidas_by_origin_dest_group(self, salida_date, selected_origin_id=None):
-        """Retorna salidas agrupadas por origen -> destino -> grupo para una fecha específica"""
-        if not salida_date:
-            return {}
+    def _build_resumen_cedis(self, plan_date, salida_date, pvp_map):
+        """
+        Construye resumen por CEDIS con unidades y USD
+        """
+        if not plan_date:
+            return []
         
-        result = {}
-        qs = (
-            SalidaNormalizada.objects
-            .filter(fecha_salida=salida_date)
-            .select_related("product", "cedis_origen", "sucursal_destino")
+        # Obtener planificaciones
+        plan_qs = (
+            PlanificacionNormalizada.objects
+            .filter(plan_month=plan_date)
+            .select_related("cedis_origen", "product")
         )
         
-        if selected_origin_id:
-            qs = qs.filter(cedis_origen_id=selected_origin_id)
+        # Obtener salidas
+        salida_qs = (
+            SalidaNormalizada.objects
+            .filter(fecha_salida=salida_date)
+            .select_related("cedis_origen", "product")
+        ) if salida_date else SalidaNormalizada.objects.none()
         
-        for row in qs:
-            if not row.sucursal_destino:
-                continue
+        # Crear lookup de planificaciones por (cedis, sku, sucursal)
+        plan_lookup = set()
+        for p in plan_qs:
+            key = (
+                p.cedis_origen_id,
+                p.item_code.lower() if p.item_code else "",
+                p.sucursal_id
+            )
+            plan_lookup.add(key)
+        
+        # Agrupar planificaciones por CEDIS
+        plan_by_cedis = defaultdict(lambda: {"qty": Decimal("0"), "usd": Decimal("0")})
+        for p in plan_qs:
+            cedis_name = p.cedis_origen.origin if p.cedis_origen else "SIN CEDIS"
+            qty = Decimal(p.a_despachar_total or 0)
+            price = self._get_price(p.item_code, pvp_map)
+            plan_by_cedis[cedis_name]["qty"] += qty
+            plan_by_cedis[cedis_name]["usd"] += qty * price
+        
+        # Agrupar salidas por CEDIS (separando planificadas vs no planificadas)
+        salida_plan_by_cedis = defaultdict(lambda: {"qty": Decimal("0"), "usd": Decimal("0")})
+        salida_noplan_by_cedis = defaultdict(lambda: {"qty": Decimal("0"), "usd": Decimal("0")})
+        
+        for s in salida_qs:
+            cedis_name = s.cedis_origen.origin if s.cedis_origen else "SIN CEDIS"
+            qty = Decimal(s.cantidad or 0)
+            price = self._get_price(s.sku, pvp_map)
             
-            origin = row.cedis_origen
-            dest = row.sucursal_destino
-            group = (row.product.group if row.product and row.product.group else "SIN GRUPO").strip() or "SIN GRUPO"
-            qty = Decimal(row.cantidad or 0)
+            # Verificar si estaba planificada
+            key = (
+                s.cedis_origen_id,
+                s.sku.lower() if s.sku else "",
+                s.sucursal_destino_id
+            )
             
-            key_origin = (origin.id if origin else None, origin.origin if origin else "SIN ORIGEN")
-            origin_bucket = result.setdefault(key_origin, {})
-            dest_bucket = origin_bucket.setdefault(dest.id, {
-                "name": dest.name,
-                "groups": {}
+            if key in plan_lookup:
+                salida_plan_by_cedis[cedis_name]["qty"] += qty
+                salida_plan_by_cedis[cedis_name]["usd"] += qty * price
+            else:
+                salida_noplan_by_cedis[cedis_name]["qty"] += qty
+                salida_noplan_by_cedis[cedis_name]["usd"] += qty * price
+        
+        # Construir resultado
+        result = []
+        all_cedis = sorted(set(plan_by_cedis.keys()) | set(salida_plan_by_cedis.keys()) | set(salida_noplan_by_cedis.keys()))
+        
+        for cedis_name in all_cedis:
+            plan = plan_by_cedis.get(cedis_name, {"qty": Decimal("0"), "usd": Decimal("0")})
+            salida_plan = salida_plan_by_cedis.get(cedis_name, {"qty": Decimal("0"), "usd": Decimal("0")})
+            salida_noplan = salida_noplan_by_cedis.get(cedis_name, {"qty": Decimal("0"), "usd": Decimal("0")})
+            
+            total_salida_qty = salida_plan["qty"] + salida_noplan["qty"]
+            total_salida_usd = salida_plan["usd"] + salida_noplan["usd"]
+            
+            result.append({
+                "name": cedis_name,
+                "plan_qty": plan["qty"],
+                "plan_usd": plan["usd"],
+                "salida_plan_qty": salida_plan["qty"],
+                "salida_plan_usd": salida_plan["usd"],
+                "percent_qty": self._calc_percent(salida_plan["qty"], plan["qty"]),
+                "percent_usd": self._calc_percent(salida_plan["usd"], plan["usd"]),
+                "salida_noplan_qty": salida_noplan["qty"],
+                "salida_noplan_usd": salida_noplan["usd"],
+                "total_salida_qty": total_salida_qty,
+                "total_salida_usd": total_salida_usd,
             })
-            dest_bucket["groups"].setdefault(group, Decimal("0"))
-            dest_bucket["groups"][group] += qty
+        
+        # Ordenar CEDIS de mayor a menor por porcentaje de cumplimiento
+        result.sort(key=lambda x: x["percent_qty"], reverse=True)
         
         return result
-    
-    def _build_comparison_table(self, plan_data, salida_data, plan_date, salida_date):
+
+    def _build_resumen_tiendas(self, plan_date, salida_date, pvp_map):
         """
-        Construye tabla comparativa entre plan y salidas.
-        Cuando la planificación no tiene CEDIS origen (TODOS), se agregan salidas de todos los orígenes.
+        Construye resumen por Tienda con jerarquía: Tienda → Prioridad → Tipo de carga → Producto
         """
-        table = []
+        if not plan_date:
+            return []
         
-        # Caso especial: Si hay planificación con origen None (TODOS), agregar salidas de todos los orígenes
-        plan_todos_key = (None, "TODOS LOS CEDIS")
-        if plan_todos_key in plan_data:
-            # Agregar salidas de todos los orígenes a "TODOS LOS CEDIS"
-            salidas_agregadas = {}
-            for origin_key, origin_data in salida_data.items():
-                for dest_id, dest_data in origin_data.items():
-                    if dest_id not in salidas_agregadas:
-                        salidas_agregadas[dest_id] = {
-                            "name": dest_data["name"],
-                            "groups": {}
-                        }
-                    # Sumar cantidades por grupo
-                    for group, qty in dest_data["groups"].items():
-                        current = salidas_agregadas[dest_id]["groups"].get(group, Decimal("0"))
-                        salidas_agregadas[dest_id]["groups"][group] = current + qty
+        # Obtener planificaciones
+        plan_qs = (
+            PlanificacionNormalizada.objects
+            .filter(plan_month=plan_date)
+            .select_related("sucursal", "product")
+        )
+        
+        # Obtener salidas
+        salida_qs = (
+            SalidaNormalizada.objects
+            .filter(fecha_salida=salida_date)
+            .select_related("sucursal_destino", "product")
+        ) if salida_date else SalidaNormalizada.objects.none()
+        
+        # Crear lookup de planificaciones por (sucursal, sku)
+        plan_lookup = set()
+        for p in plan_qs:
+            key = (p.sucursal_id, p.item_code.lower() if p.item_code else "")
+            plan_lookup.add(key)
+        
+        # Agrupar planificaciones por Tienda → Prioridad → Tipo → Producto
+        plan_by_tienda = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {"qty": Decimal("0"), "usd": Decimal("0")}))))
+        for p in plan_qs:
+            tienda_name = p.sucursal.name if p.sucursal else "SIN TIENDA"
+            prioridad = "PLANIFICADO"  # Las planificaciones son siempre planificadas
+            tipo_carga = p.tipo_carga.strip() if p.tipo_carga else "SIN TIPO"
+            producto = f"{p.item_code} - {p.item_name}" if p.item_code and p.item_name else p.item_code or p.item_name or "SIN NOMBRE"
+            qty = Decimal(p.a_despachar_total or 0)
+            price = self._get_price(p.item_code, pvp_map)
+            plan_by_tienda[tienda_name][prioridad][tipo_carga][producto]["qty"] += qty
+            plan_by_tienda[tienda_name][prioridad][tipo_carga][producto]["usd"] += qty * price
+        
+        # Agrupar salidas por Tienda → Prioridad → Tipo → Producto
+        salida_plan_by_tienda = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {"qty": Decimal("0"), "usd": Decimal("0")}))))
+        salida_noplan_by_tienda = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {"qty": Decimal("0"), "usd": Decimal("0")}))))
+        
+        for s in salida_qs:
+            tienda_name = s.sucursal_destino.name if s.sucursal_destino else "SIN TIENDA"
+            tipo_carga = "SIN TIPO"  # Las salidas no tienen tipo_carga
+            producto = f"{s.sku} - {s.descripcion}" if s.sku and s.descripcion else s.sku or s.descripcion or "SIN NOMBRE"
+            qty = Decimal(s.cantidad or 0)
+            price = self._get_price(s.sku, pvp_map)
             
-            # Crear entrada para "TODOS LOS CEDIS" combinando plan y salidas agregadas
-            plan_origin = plan_data[plan_todos_key]
-            all_dest_ids = set(plan_origin.keys()) | set(salidas_agregadas.keys())
+            # Verificar si estaba planificada
+            key = (s.sucursal_destino_id, s.sku.lower() if s.sku else "")
             
-            destinos = []
-            for dest_id in all_dest_ids:
-                plan_dest = plan_origin.get(dest_id, {"name": "", "groups": {}})
-                salida_dest = salidas_agregadas.get(dest_id, {"name": "", "groups": {}})
+            if key in plan_lookup:
+                prioridad = "PLANIFICADO"
+                salida_plan_by_tienda[tienda_name][prioridad][tipo_carga][producto]["qty"] += qty
+                salida_plan_by_tienda[tienda_name][prioridad][tipo_carga][producto]["usd"] += qty * price
+            else:
+                prioridad = "NO PLANIFICADO"
+                salida_noplan_by_tienda[tienda_name][prioridad][tipo_carga][producto]["qty"] += qty
+                salida_noplan_by_tienda[tienda_name][prioridad][tipo_carga][producto]["usd"] += qty * price
+        
+        # Construir resultado jerárquico
+        result = []
+        all_tiendas = sorted(set(plan_by_tienda.keys()) | set(salida_plan_by_tienda.keys()) | set(salida_noplan_by_tienda.keys()))
+        
+        for tienda_name in all_tiendas:
+            tienda_plan = plan_by_tienda.get(tienda_name, {})
+            tienda_salida_plan = salida_plan_by_tienda.get(tienda_name, {})
+            tienda_salida_noplan = salida_noplan_by_tienda.get(tienda_name, {})
+            
+            # Combinar todas las prioridades
+            all_prioridades = sorted(set(tienda_plan.keys()) | set(tienda_salida_plan.keys()) | set(tienda_salida_noplan.keys()))
+            
+            prioridades_list = []
+            tienda_total_plan_qty = Decimal("0")
+            tienda_total_plan_usd = Decimal("0")
+            tienda_total_salida_plan_qty = Decimal("0")
+            tienda_total_salida_plan_usd = Decimal("0")
+            tienda_total_salida_noplan_qty = Decimal("0")
+            tienda_total_salida_noplan_usd = Decimal("0")
+            
+            for prioridad in all_prioridades:
+                prio_plan = tienda_plan.get(prioridad, {})
+                prio_salida_plan = tienda_salida_plan.get(prioridad, {})
+                prio_salida_noplan = tienda_salida_noplan.get(prioridad, {})
                 
-                dest_name = plan_dest.get("name") or salida_dest.get("name", f"Destino {dest_id}")
-                all_groups = set(plan_dest.get("groups", {}).keys()) | set(salida_dest.get("groups", {}).keys())
+                all_tipos = sorted(set(prio_plan.keys()) | set(prio_salida_plan.keys()) | set(prio_salida_noplan.keys()))
                 
-                grupos = []
-                for group in all_groups:
-                    plan_qty = plan_dest.get("groups", {}).get(group, Decimal("0"))
-                    salida_qty = salida_dest.get("groups", {}).get(group, Decimal("0"))
+                tipos_list = []
+                prio_total_plan_qty = Decimal("0")
+                prio_total_plan_usd = Decimal("0")
+                prio_total_salida_plan_qty = Decimal("0")
+                prio_total_salida_plan_usd = Decimal("0")
+                prio_total_salida_noplan_qty = Decimal("0")
+                prio_total_salida_noplan_usd = Decimal("0")
+                
+                for tipo in all_tipos:
+                    tipo_plan = prio_plan.get(tipo, {})
+                    tipo_salida_plan = prio_salida_plan.get(tipo, {})
+                    tipo_salida_noplan = prio_salida_noplan.get(tipo, {})
                     
-                    if plan_qty > 0:
-                        percent = (salida_qty / plan_qty) * Decimal("100")
-                        percent = percent.quantize(Decimal("0.01"))
-                    else:
-                        percent = Decimal("0") if salida_qty == 0 else Decimal("999")
+                    all_productos = sorted(set(tipo_plan.keys()) | set(tipo_salida_plan.keys()) | set(tipo_salida_noplan.keys()))
                     
-                    if plan_qty == 0 and salida_qty > 0:
-                        status = "sin_plan"
-                    elif plan_qty > 0 and salida_qty == 0:
-                        status = "sin_entregas"
-                    elif percent >= 100:
-                        status = "completo"
-                    elif percent >= 80:
-                        status = "alto"
-                    elif percent >= 50:
-                        status = "medio"
-                    elif percent > 0:
-                        status = "bajo"
-                    else:
-                        status = "ninguno"
+                    productos_list = []
+                    tipo_total_plan_qty = Decimal("0")
+                    tipo_total_plan_usd = Decimal("0")
+                    tipo_total_salida_plan_qty = Decimal("0")
+                    tipo_total_salida_plan_usd = Decimal("0")
+                    tipo_total_salida_noplan_qty = Decimal("0")
+                    tipo_total_salida_noplan_usd = Decimal("0")
                     
-                    grupos.append({
-                        "name": group,
-                        "plan": plan_qty,
-                        "salida": salida_qty,
-                        "percent": percent if percent < 999 else None,
-                        "status": status
+                    for producto in all_productos:
+                        plan = tipo_plan.get(producto, {"qty": Decimal("0"), "usd": Decimal("0")})
+                        salida_plan = tipo_salida_plan.get(producto, {"qty": Decimal("0"), "usd": Decimal("0")})
+                        salida_noplan = tipo_salida_noplan.get(producto, {"qty": Decimal("0"), "usd": Decimal("0")})
+                        
+                        total_salida_qty = salida_plan["qty"] + salida_noplan["qty"]
+                        total_salida_usd = salida_plan["usd"] + salida_noplan["usd"]
+                        
+                        productos_list.append({
+                            "name": producto,
+                            "plan_qty": plan["qty"],
+                            "plan_usd": plan["usd"],
+                            "salida_plan_qty": salida_plan["qty"],
+                            "salida_plan_usd": salida_plan["usd"],
+                            "percent_qty": self._calc_percent(salida_plan["qty"], plan["qty"]),
+                            "percent_usd": self._calc_percent(salida_plan["usd"], plan["usd"]),
+                            "salida_noplan_qty": salida_noplan["qty"],
+                            "salida_noplan_usd": salida_noplan["usd"],
+                            "total_salida_qty": total_salida_qty,
+                            "total_salida_usd": total_salida_usd,
+                        })
+                        
+                        tipo_total_plan_qty += plan["qty"]
+                        tipo_total_plan_usd += plan["usd"]
+                        tipo_total_salida_plan_qty += salida_plan["qty"]
+                        tipo_total_salida_plan_usd += salida_plan["usd"]
+                        tipo_total_salida_noplan_qty += salida_noplan["qty"]
+                        tipo_total_salida_noplan_usd += salida_noplan["usd"]
+                    
+                    # Ordenar productos por porcentaje
+                    productos_list.sort(key=lambda x: x["percent_qty"], reverse=True)
+                    
+                    tipo_total_salida_qty = tipo_total_salida_plan_qty + tipo_total_salida_noplan_qty
+                    tipo_total_salida_usd = tipo_total_salida_plan_usd + tipo_total_salida_noplan_usd
+                    
+                    tipos_list.append({
+                        "name": tipo,
+                        "plan_qty": tipo_total_plan_qty,
+                        "plan_usd": tipo_total_plan_usd,
+                        "salida_plan_qty": tipo_total_salida_plan_qty,
+                        "salida_plan_usd": tipo_total_salida_plan_usd,
+                        "percent_qty": self._calc_percent(tipo_total_salida_plan_qty, tipo_total_plan_qty),
+                        "percent_usd": self._calc_percent(tipo_total_salida_plan_usd, tipo_total_plan_usd),
+                        "salida_noplan_qty": tipo_total_salida_noplan_qty,
+                        "salida_noplan_usd": tipo_total_salida_noplan_usd,
+                        "total_salida_qty": tipo_total_salida_qty,
+                        "total_salida_usd": tipo_total_salida_usd,
+                        "productos": productos_list,
                     })
+                    
+                    prio_total_plan_qty += tipo_total_plan_qty
+                    prio_total_plan_usd += tipo_total_plan_usd
+                    prio_total_salida_plan_qty += tipo_total_salida_plan_qty
+                    prio_total_salida_plan_usd += tipo_total_salida_plan_usd
+                    prio_total_salida_noplan_qty += tipo_total_salida_noplan_qty
+                    prio_total_salida_noplan_usd += tipo_total_salida_noplan_usd
                 
-                if grupos:
-                    destinos.append({
-                        "id": dest_id,
-                        "name": dest_name,
-                        "grupos": sorted(grupos, key=lambda g: g["name"])
-                    })
-            
-            if destinos:
-                table.append({
-                    "origin_id": None,
-                    "origin_name": "TODOS LOS CEDIS",
-                    "destinos": sorted(destinos, key=lambda d: d["name"])
+                # Ordenar tipos por porcentaje
+                tipos_list.sort(key=lambda x: x["percent_qty"], reverse=True)
+                
+                prio_total_salida_qty = prio_total_salida_plan_qty + prio_total_salida_noplan_qty
+                prio_total_salida_usd = prio_total_salida_plan_usd + prio_total_salida_noplan_usd
+                
+                prioridades_list.append({
+                    "name": prioridad,
+                    "plan_qty": prio_total_plan_qty,
+                    "plan_usd": prio_total_plan_usd,
+                    "salida_plan_qty": prio_total_salida_plan_qty,
+                    "salida_plan_usd": prio_total_salida_plan_usd,
+                    "percent_qty": self._calc_percent(prio_total_salida_plan_qty, prio_total_plan_qty),
+                    "percent_usd": self._calc_percent(prio_total_salida_plan_usd, prio_total_plan_usd),
+                    "salida_noplan_qty": prio_total_salida_noplan_qty,
+                    "salida_noplan_usd": prio_total_salida_noplan_usd,
+                    "total_salida_qty": prio_total_salida_qty,
+                    "total_salida_usd": prio_total_salida_usd,
+                    "tipos": tipos_list,
                 })
-        
-        # Procesar orígenes específicos (salidas sin plan correspondiente)
-        for origin_key in salida_data.keys():
-            origin_id, origin_name = origin_key
+                
+                tienda_total_plan_qty += prio_total_plan_qty
+                tienda_total_plan_usd += prio_total_plan_usd
+                tienda_total_salida_plan_qty += prio_total_salida_plan_qty
+                tienda_total_salida_plan_usd += prio_total_salida_plan_usd
+                tienda_total_salida_noplan_qty += prio_total_salida_noplan_qty
+                tienda_total_salida_noplan_usd += prio_total_salida_noplan_usd
             
-            # Solo mostrar orígenes específicos si tienen salidas sin plan
-            if origin_key not in plan_data and plan_todos_key not in plan_data:
-                salida_origin = salida_data[origin_key]
-                destinos = []
-                
-                for dest_id, salida_dest in salida_origin.items():
-                    dest_name = salida_dest.get("name", f"Destino {dest_id}")
-                    all_groups = set(salida_dest.get("groups", {}).keys())
-                    
-                    grupos = []
-                    for group in all_groups:
-                        salida_qty = salida_dest["groups"][group]
-                        grupos.append({
-                            "name": group,
-                            "plan": Decimal("0"),
-                            "salida": salida_qty,
-                            "percent": None,
-                            "status": "sin_plan"
-                        })
-                    
-                    if grupos:
-                        destinos.append({
-                            "id": dest_id,
-                            "name": dest_name,
-                            "grupos": sorted(grupos, key=lambda g: g["name"])
-                        })
-                
-                if destinos:
-                    table.append({
-                        "origin_id": origin_id,
-                        "origin_name": origin_name,
-                        "destinos": sorted(destinos, key=lambda d: d["name"])
-                    })
+            # Ordenar prioridades (PLANIFICADO primero)
+            prioridades_list.sort(key=lambda x: (x["name"] != "PLANIFICADO", x["percent_qty"]), reverse=True)
+            
+            tienda_total_salida_qty = tienda_total_salida_plan_qty + tienda_total_salida_noplan_qty
+            tienda_total_salida_usd = tienda_total_salida_plan_usd + tienda_total_salida_noplan_usd
+            
+            result.append({
+                "name": tienda_name,
+                "plan_qty": tienda_total_plan_qty,
+                "plan_usd": tienda_total_plan_usd,
+                "salida_plan_qty": tienda_total_salida_plan_qty,
+                "salida_plan_usd": tienda_total_salida_plan_usd,
+                "percent_qty": self._calc_percent(tienda_total_salida_plan_qty, tienda_total_plan_qty),
+                "percent_usd": self._calc_percent(tienda_total_salida_plan_usd, tienda_total_plan_usd),
+                "salida_noplan_qty": tienda_total_salida_noplan_qty,
+                "salida_noplan_usd": tienda_total_salida_noplan_usd,
+                "total_salida_qty": tienda_total_salida_qty,
+                "total_salida_usd": tienda_total_salida_usd,
+                "prioridades": prioridades_list,
+            })
         
-        return sorted(table, key=lambda o: o["origin_name"] if o["origin_name"] != "TODOS LOS CEDIS" else "")
-    
-    
-    def _calculate_summary(self, table):
-        """Calcula resumen general de cumplimiento"""
-        total_plan = Decimal("0")
-        total_salidas = Decimal("0")
-        total_destinos = 0
-        total_grupos = 0
+        # Ordenar tiendas de mayor a menor por porcentaje de cumplimiento
+        result.sort(key=lambda x: x["percent_qty"], reverse=True)
         
-        for origen in table:
-            for destino in origen["destinos"]:
-                total_destinos += 1
-                for grupo in destino["grupos"]:
-                    total_grupos += 1
-                    total_plan += grupo["plan"]
-                    total_salidas += grupo["salida"]
-        
-        percent_general = Decimal("0")
-        if total_plan > 0:
-            percent_general = (total_salidas / total_plan) * Decimal("100")
-            percent_general = percent_general.quantize(Decimal("0.01"))
-        
-        return {
-            "total_plan": total_plan,
-            "total_salidas": total_salidas,
-            "percent_general": percent_general,
-            "total_destinos": total_destinos,
-            "total_grupos": total_grupos,
+        return result
+
+    def _calculate_nacional(self, resumen_tiendas):
+        """Calcula totales nacionales"""
+        total = {
+            "plan_qty": Decimal("0"),
+            "plan_usd": Decimal("0"),
+            "salida_plan_qty": Decimal("0"),
+            "salida_plan_usd": Decimal("0"),
+            "salida_noplan_qty": Decimal("0"),
+            "salida_noplan_usd": Decimal("0"),
+            "total_salida_qty": Decimal("0"),
+            "total_salida_usd": Decimal("0"),
         }
-    
-    def _origin_choices(self):
-        """Lista de todos los CEDIS disponibles incluyendo opción 'TODOS'"""
-        from ..models import Cendis
         
-        # Agregar opción "Todos" al inicio
-        origins = [(None, "TODOS LOS CEDIS")]
+        for tienda in resumen_tiendas:
+            total["plan_qty"] += tienda["plan_qty"]
+            total["plan_usd"] += tienda["plan_usd"]
+            total["salida_plan_qty"] += tienda["salida_plan_qty"]
+            total["salida_plan_usd"] += tienda["salida_plan_usd"]
+            total["salida_noplan_qty"] += tienda["salida_noplan_qty"]
+            total["salida_noplan_usd"] += tienda["salida_noplan_usd"]
+            total["total_salida_qty"] += tienda["total_salida_qty"]
+            total["total_salida_usd"] += tienda["total_salida_usd"]
         
-        # Obtener todos los CEDIS registrados
-        cedis_list = Cendis.objects.values_list('id', 'origin').order_by('origin')
-        origins.extend(list(cedis_list))
+        total["percent_qty"] = self._calc_percent(total["salida_plan_qty"], total["plan_qty"])
+        total["percent_usd"] = self._calc_percent(total["salida_plan_usd"], total["plan_usd"])
         
-        return origins
-    
-    def _export_csv(self, table, plan_date, salida_date):
-        """Exporta tabla a CSV"""
+        return total
+
+    def _calc_percent(self, actual, planned):
+        """Calcular porcentaje de cumplimiento"""
+        if planned and planned > 0:
+            return ((actual / planned) * Decimal("100")).quantize(Decimal("0.01"))
+        return Decimal("0")
+
+    def _export_cumplimiento_csv(self, data, plan_date, salida_date):
         response = HttpResponse(content_type="text/csv; charset=utf-8-sig")
-        response["Content-Disposition"] = f'attachment; filename="tablero_normalizado_{plan_date}_{salida_date}.csv"'
+        response["Content-Disposition"] = f'attachment; filename="cumplimiento_{plan_date}_{salida_date}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(["CEDIS", "Tipo Carga", "Categoría", "Producto", "Planificado", "Despachado", "% Cumplimiento"])
+        
+        for cedis in data:
+            for tipo in cedis["tipos"]:
+                for categoria in tipo["categorias"]:
+                    for producto in categoria["productos"]:
+                        writer.writerow([
+                            cedis["name"],
+                            tipo["name"],
+                            categoria["name"],
+                            producto["name"],
+                            str(producto["plan"]),
+                            str(producto["salida"]),
+                            f'{producto["percent"]}%'
+                        ])
+        
+        return response
+
+    def _export_cedis_csv(self, data, plan_date, salida_date):
+        response = HttpResponse(content_type="text/csv; charset=utf-8-sig")
+        response["Content-Disposition"] = f'attachment; filename="resumen_cedis_{plan_date}_{salida_date}.csv"'
         
         writer = csv.writer(response)
         writer.writerow([
-            "CEDIS Origen",
-            "Sucursal Destino",
-            "Grupo",
-            f"Plan ({plan_date})",
-            f"Salidas ({salida_date})",
-            "% Cumplimiento",
-            "Estado"
+            "CEDIS", "Unid. Plan.", "USD Plan.", "Unid. Plan. Despachadas", "USD Plan. Despachados",
+            "% Unid. Plan.", "% USD Plan.", "Unid. NO Plan.", "USD NO Plan.",
+            "Total Unid. Despachadas", "Total USD Despachados"
         ])
         
-        for origen in table:
-            origin_name = origen["origin_name"]
-            for destino in origen["destinos"]:
-                dest_name = destino["name"]
-                for grupo in destino["grupos"]:
-                    writer.writerow([
-                        origin_name,
-                        dest_name,
-                        grupo["name"],
-                        str(grupo["plan"]),
-                        str(grupo["salida"]),
-                        f'{grupo["percent"]}%' if grupo["percent"] is not None else "N/A",
-                        grupo["status"]
-                    ])
+        for row in data:
+            writer.writerow([
+                row["name"],
+                str(row["plan_qty"]),
+                str(row["plan_usd"]),
+                str(row["salida_plan_qty"]),
+                str(row["salida_plan_usd"]),
+                f'{row["percent_qty"]}%',
+                f'{row["percent_usd"]}%',
+                str(row["salida_noplan_qty"]),
+                str(row["salida_noplan_usd"]),
+                str(row["total_salida_qty"]),
+                str(row["total_salida_usd"]),
+            ])
+        
+        return response
+
+    def _export_tiendas_csv(self, data, plan_date, salida_date):
+        response = HttpResponse(content_type="text/csv; charset=utf-8-sig")
+        response["Content-Disposition"] = f'attachment; filename="resumen_tiendas_{plan_date}_{salida_date}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            "Tienda", "Unid. Plan.", "USD Plan.", "Unid. Plan. Despachadas", "USD Plan. Despachados",
+            "% Unid. Plan.", "% USD Plan.", "Unid. NO Plan.", "USD NO Plan.",
+            "Total Unid. Despachadas", "Total USD Despachados"
+        ])
+        
+        for row in data:
+            writer.writerow([
+                row["name"],
+                str(row["plan_qty"]),
+                str(row["plan_usd"]),
+                str(row["salida_plan_qty"]),
+                str(row["salida_plan_usd"]),
+                f'{row["percent_qty"]}%',
+                f'{row["percent_usd"]}%',
+                str(row["salida_noplan_qty"]),
+                str(row["salida_noplan_usd"]),
+                str(row["total_salida_qty"]),
+                str(row["total_salida_usd"]),
+            ])
         
         return response

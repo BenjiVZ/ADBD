@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views import View
 
-from ..models import Cendis, Product, Salida, SalidaNormalizada, Sucursal
+from ..models import Cendis, Product, Salida, SalidaNormalizada, Sucursal, MapeoCedis, MapeoSucursal
 
 
 class SalidaNormalizeView(View):
@@ -33,10 +33,31 @@ class SalidaNormalizeView(View):
     def post(self, request, *args, **kwargs):
         selected_date = self._selected_date(request)
         dates = self._dates()
+        
+        # Verificar si es una acción de limpieza
+        action = request.POST.get('action')
+        reset_message = None
+        if action == 'reset_date' and selected_date:
+            # Limpiar normalizaciones de esta fecha específica
+            # selected_date ya es un objeto date, no necesita parsear
+            fecha_obj = selected_date if isinstance(selected_date, datetime.date) else datetime.datetime.strptime(selected_date, "%Y-%m-%d").date()
+            
+            # Resetear estado de Salidas de esta fecha
+            reset_count = Salida.objects.filter(fecha_salida=fecha_obj).update(
+                normalize_status='pending',
+                normalize_notes='',
+                normalized_at=None
+            )
+            
+            # Eliminar registros normalizados de esta fecha
+            deleted_count = SalidaNormalizada.objects.filter(fecha_salida=fecha_obj).delete()[0]
+            
+            print(f"🗑️ Limpiada fecha {selected_date}: {reset_count} registros reseteados, {deleted_count} normalizados eliminados")
+            reset_message = f"✅ Fecha {selected_date} limpiada: {reset_count} registros listos para re-normalizar"
+            # Continuar con la normalización automáticamente...
 
+        # Normalizar TODAS las fechas - no filtrar por fecha seleccionada
         queryset = Salida.objects.filter(normalize_status__in=["pending", "error"])
-        if selected_date:
-            queryset = queryset.filter(fecha_salida=selected_date)
         
         print(f"\n🔄 INICIANDO NORMALIZACIÓN DE SALIDAS")
         print(f"📊 Total de registros a procesar: {queryset.count()}")
@@ -46,16 +67,28 @@ class SalidaNormalizeView(View):
         cendis_list = Cendis.objects.all()
         products = Product.objects.all()
         
+        # Cargar mapeos
+        mapeos_cedis = MapeoCedis.objects.select_related('cedis_oficial').all()
+        mapeos_sucursales = MapeoSucursal.objects.select_related('sucursal_oficial').all()
+        
         print(f"✅ Cargadas {len(sucursales)} sucursales")
         print(f"✅ Cargados {len(cendis_list)} CENDIS")
         print(f"✅ Cargados {len(products)} productos")
+        print(f"✅ Cargados {len(mapeos_cedis)} mapeos de CEDIS")
+        print(f"✅ Cargados {len(mapeos_sucursales)} mapeos de Sucursales")
         
         sucursales_map = {s.name.lower(): s for s in sucursales}
         cendis_map = {c.origin.lower(): c for c in cendis_list}
         products_map = {p.code.lower(): p for p in products}
         
+        # Mapeos: nombre_crudo -> entidad_oficial
+        mapeos_cedis_dict = {m.nombre_crudo.lower(): m.cedis_oficial for m in mapeos_cedis}
+        mapeos_sucursales_dict = {m.nombre_crudo.lower(): m.sucursal_oficial for m in mapeos_sucursales}
+        
         print(f"\n📋 CENDIS disponibles: {list(cendis_map.keys())}")
         print(f"📋 Sucursales disponibles (primeras 10): {list(sucursales_map.keys())[:10]}")
+        print(f"🔗 Mapeos CEDIS: {list(mapeos_cedis_dict.keys())}")
+        print(f"🔗 Mapeos Sucursales (primeras 10): {list(mapeos_sucursales_dict.keys())[:10]}")
         
         # Obtener registros normalizados existentes de una vez
         existing_normalized = {
@@ -81,7 +114,7 @@ class SalidaNormalizeView(View):
                 if record_count <= 5:  # Log primeros 5 registros
                     print(f"\n🔍 Registro #{record_count}:")
                     print(f"   ID: {raw.id}")
-                    print(f"   Origen raw: '{raw.nombre_sucursal_origen}'")
+                    print(f"   Origen raw (almacen): '{raw.nombre_almacen_origen}'")
                     print(f"   Destino raw: '{raw.nombre_sucursal_destino}'")
                     print(f"   SKU: '{raw.sku}'")
                 
@@ -89,9 +122,13 @@ class SalidaNormalizeView(View):
 
                 # ORIGEN: DEBE estar en CEDIS (almacenes) - SI NO → ERROR
                 cedis_origen = None
-                if raw.nombre_sucursal_origen:
-                    origen_key = raw.nombre_sucursal_origen.strip().lower()
+                if raw.nombre_almacen_origen:
+                    origen_key = raw.nombre_almacen_origen.strip().lower()
+                    # 1. Buscar nombre exacto en CEDIS
                     cedis_origen = cendis_map.get(origen_key)
+                    # 2. Si no existe, buscar en mapeos de CEDIS
+                    if not cedis_origen:
+                        cedis_origen = mapeos_cedis_dict.get(origen_key)
                     
                     if not cedis_origen:
                         # NO está en CEDIS → ERROR (aunque esté en Sucursales)
@@ -101,24 +138,32 @@ class SalidaNormalizeView(View):
                                 print(f"   ❌ Origen '{origen_key}' NO es un CEDIS (está en Sucursales) → ERROR")
                             else:
                                 print(f"   ❌ Origen '{origen_key}' NO encontrado en CEDIS → ERROR")
-                        issues.append(f"Origen NO es un almacén CEDIS: {raw.nombre_sucursal_origen}")
+                        issues.append(f"Origen NO es un almacén CEDIS: {raw.nombre_almacen_origen}")
                     else:
                         if record_count <= 5:
                             print(f"   ✅ Origen: '{origen_key}' → CEDIS (almacén) encontrado")
                 else:
                     if record_count <= 5:
-                        print(f"   ⚠️ Origen: Sin valor")
+                        print(f"   ⚠️ Origen: Sin valor (nombre_almacen_origen vacío)")
                     issues.append("Sin origen especificado")
 
                 # DESTINO debe ser Sucursal/Tienda (tabla Sucursal)
+                # Usar nombre_sucursal_destino, o sucursal_destino_propuesto como fallback
                 sucursal_destino = None
-                if raw.nombre_sucursal_destino:
-                    destino_key = raw.nombre_sucursal_destino.strip().lower()
+                destino_nombre = raw.nombre_sucursal_destino or raw.sucursal_destino_propuesto
+                if destino_nombre:
+                    destino_key = destino_nombre.strip().lower()
+                    # 1. Buscar nombre exacto en Sucursales
                     sucursal_destino = sucursales_map.get(destino_key)
-                    if record_count <= 5:
-                        print(f"   🏢 Buscando sucursal/tienda destino: '{destino_key}' -> {'✅ Encontrada' if sucursal_destino else '❌ NO encontrada'}")
+                    # 2. Si no existe, buscar en mapeos de Sucursales
                     if not sucursal_destino:
-                        issues.append(f"Sucursal/tienda destino no encontrada: {raw.nombre_sucursal_destino}")
+                        sucursal_destino = mapeos_sucursales_dict.get(destino_key)
+                    
+                    if record_count <= 5:
+                        status = '✅ Encontrada' if sucursal_destino else '❌ NO encontrada'
+                        print(f"   🏢 Buscando sucursal/tienda destino: '{destino_key}' -> {status}")
+                    if not sucursal_destino:
+                        issues.append(f"Sucursal/tienda destino no encontrada: {destino_nombre}")
                 else:
                     if record_count <= 5:
                         print(f"   🏢 Sucursal/tienda destino: ⚠️ Sin valor")
@@ -146,8 +191,8 @@ class SalidaNormalizeView(View):
                     "cedis_origen": cedis_origen,
                     "sucursal_destino": sucursal_destino,
                     "product": product,
-                    "origen_nombre": raw.nombre_sucursal_origen or "",
-                    "destino_nombre": raw.nombre_sucursal_destino or "",
+                    "origen_nombre": raw.nombre_almacen_origen or "",
+                    "destino_nombre": destino_nombre or "",  # Usar el nombre resuelto (puede venir de sucursal_destino_propuesto)
                     "entrada": raw.entrada or "",
                     "fecha_entrada": raw.fecha_entrada,
                     "comments": raw.comments or "",
@@ -212,23 +257,29 @@ class SalidaNormalizeView(View):
         errors = self._errors(selected_date)
         pending = self._pending(selected_date)
 
+        context = {
+            "summary": summary,
+            "errors": errors,
+            "pending": pending,
+            "selected_date": selected_date,
+            "dates": dates,
+            "ran": True,
+            "run_result": {
+                "processed": queryset.count(),
+                "created": created,
+                "updated": updated,
+                "errors": errors_count,
+            },
+        }
+        
+        # Agregar mensaje de reset si existe
+        if reset_message:
+            context["message"] = reset_message
+
         return render(
             request,
             self.template_name,
-            {
-                "summary": summary,
-                "errors": errors,
-                "pending": pending,
-                "selected_date": selected_date,
-                "dates": dates,
-                "ran": True,
-                "run_result": {
-                    "processed": queryset.count(),
-                    "created": created,
-                    "updated": updated,
-                    "errors": errors_count,
-                },
-            },
+            context,
         )
 
     def _dates(self):
@@ -243,9 +294,14 @@ class SalidaNormalizeView(View):
         raw_date = request.GET.get("fecha_salida") or request.POST.get("fecha_salida")
         if raw_date:
             try:
+                # Intentar formato estándar YYYY-MM-DD primero
                 return datetime.datetime.strptime(raw_date, "%Y-%m-%d").date()
             except ValueError:
-                return None
+                try:
+                    # Intentar formato de Django "Jan. 14, 2026"
+                    return datetime.datetime.strptime(raw_date, "%b. %d, %Y").date()
+                except ValueError:
+                    return None
         dates = self._dates()
         return dates[0] if dates else None
 

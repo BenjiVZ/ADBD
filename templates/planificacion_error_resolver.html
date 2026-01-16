@@ -6,11 +6,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Resolver Errores - Planificación</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 24px; color: #222; background: #f5f5f5; }
-        h1 { margin-bottom: 8px; color: #c62828; }
-        .nav { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-        .nav a { color: #0b6bcb; text-decoration: none; font-weight: 600; }
-        .nav a:hover { text-decoration: underline; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px 48px 24px;
+        }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 48px;
+            box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
+        }
+        h1 { 
+            font-size: 42px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-bottom: 32px;
+            letter-spacing: -0.5px;
+        }
+        .nav { 
+            display: flex; 
+            gap: 32px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav a { 
+            color: #2c2c2c;
+            text-decoration: none; 
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav a:hover { 
+            color: #dc0000;
+            border-bottom-color: #dc0000;
+        }
         .summary { background: #fff; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #c62828; }
         .error-group { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .error-group h3 { margin-top: 0; color: #c62828; border-bottom: 2px solid #eee; padding-bottom: 8px; }
@@ -47,13 +87,19 @@
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <a href="/">Inicio</a>
-        <a href="/planificacion/normalizar/">Normalizar</a>
-        <a href="/planificacion/errores/">Resolver Errores</a>
-    </nav>
+    <header>
+        <div class="container">
+            <nav class="nav">
+                <a href="/">Inicio</a>
+                <a href="/planificacion/normalizar/">Normalizar Planificación</a>
+                <a href="/salidas/normalizar/">Normalizar Salidas</a>
+                <a href="/tablero/normalizado/">Tablero</a>
+            </nav>
+        </div>
+    </header>
 
-    <h1>🔧 Resolver Errores de Planificación</h1>
+    <div class="container">
+        <h1>🔧 Resolver Errores de Planificación</h1>
 
     {% if error %}
     <div class="alert alert-error">{{ error }}</div>
@@ -63,7 +109,7 @@
         <strong>Total de errores:</strong> {{ total_errors }}
     </div>
 
-    {% if not cedis_origen_faltantes and not sucursales_faltantes and not productos_faltantes %}
+    {% if not cedis_origen_faltantes and not sucursales_faltantes and not productos_faltantes and not otros_errores %}
     <div class="alert alert-success">
         ✅ No hay errores pendientes de resolver
     </div>
@@ -73,35 +119,18 @@
     {% if cedis_origen_faltantes %}
     <div class="error-group">
         <h3>🏭 CEDIS Origen No Encontrados</h3>
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin-bottom: 20px;">
+            💡 <strong>Solución:</strong> Ve a <a href="/biblioteca/cedis/" style="color: #dc0000; font-weight: 600;">Biblioteca de CEDIS</a> para crear o mapear estos nombres.
+        </div>
         {% for cedis_name, error_ids in cedis_origen_faltantes.items %}
         <div class="error-item">
             <strong>{{ cedis_name|default:"(vacío)" }}</strong>
-            <span class="count">{{ error_ids|length }} registros</span>
+            <span class="count">{{ error_ids|length }} registros afectados</span>
             
-            {% if cedis_name in cedis_origen_suggestions and cedis_origen_suggestions|get_item:cedis_name %}
-            <div class="suggestions">
-                <h4>💡 Sugerencias similares:</h4>
-                {% for suggestion in cedis_origen_suggestions|get_item:cedis_name %}
-                <span class="suggestion-item" onclick="selectSuggestion('{{ cedis_name }}', '{{ suggestion }}', 'cedis_origen')">
-                    {{ suggestion }}
-                </span>
-                {% endfor %}
-            </div>
-            {% endif %}
-
             <div class="actions">
-                <button class="btn-primary" onclick="openCreateCedisOrigenModal('{{ cedis_name }}')">
-                    ➕ Crear Nuevo CEDIS
-                </button>
-                <button class="btn-success" onclick="openMapCedisOrigenModal('{{ cedis_name }}')">
-                    🔗 Mapear a Existente
-                </button>
-                <form method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="ignore_errors">
-                    <input type="hidden" name="cendis" value="{{ cedis_name }}">
-                    <button type="submit" class="btn-danger">🚫 Ignorar</button>
-                </form>
+                <a href="/biblioteca/cedis/" class="btn-primary">
+                    🔧 Ir a Biblioteca de CEDIS
+                </a>
             </div>
         </div>
         {% endfor %}
@@ -112,36 +141,18 @@
     {% if sucursales_faltantes %}
     <div class="error-group">
         <h3>🏢 Sucursales No Encontradas</h3>
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin-bottom: 20px;">
+            💡 <strong>Solución:</strong> Ve a <a href="/biblioteca/sucursales/" style="color: #dc0000; font-weight: 600;">Biblioteca de Sucursales</a> para crear o mapear estos nombres.
+        </div>
         {% for sucursal_name, error_ids in sucursales_faltantes.items %}
         <div class="error-item">
             <strong>{{ sucursal_name|default:"(vacío)" }}</strong>
-            <span class="count">{{ error_ids|length }} registros</span>
+            <span class="count">{{ error_ids|length }} registros afectados</span>
             
-            {% if sucursal_name in sucursal_suggestions and sucursal_suggestions|get_item:sucursal_name %}
-            <div class="suggestions">
-                <h4>💡 Sugerencias similares:</h4>
-                {% for suggestion in sucursal_suggestions|get_item:sucursal_name %}
-                <span class="suggestion-item" onclick="selectSuggestion('{{ sucursal_name }}', '{{ suggestion }}', 'sucursal')">
-                    {{ suggestion }}
-                </span>
-                {% endfor %}
-            </div>
-            {% endif %}
-
             <div class="actions">
-                <button class="btn-primary" onclick="openCreateSucursalModal('{{ sucursal_name }}')">
-                    ➕ Crear Nueva Sucursal
-                </button>
-                <button class="btn-success" onclick="openMapSucursalModal('{{ sucursal_name }}')">
-                    🔗 Mapear a Existente
-                </button>
-                <form method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="ignore_errors">
-                    <input type="hidden" name="error_type" value="sucursal">
-                    <input type="hidden" name="error_value" value="{{ sucursal_name }}">
-                    <button type="submit" class="btn-danger">❌ Ignorar</button>
-                </form>
+                <a href="/biblioteca/sucursales/" class="btn-primary">
+                    🔧 Ir a Biblioteca de Sucursales
+                </a>
             </div>
         </div>
         {% endfor %}
@@ -188,6 +199,32 @@
     </div>
     {% endif %}
 
+    <!-- Otros Errores -->
+    {% if otros_errores %}
+    <div class="error-group">
+        <h3>⚠️ Otros Errores</h3>
+        <p style="color: #666; margin-bottom: 16px;">Errores que no encajan en las categorías anteriores. Revisa los mensajes para identificar el problema.</p>
+        {% for error_msg, error_ids in otros_errores.items %}
+        <div class="error-item">
+            <strong>Mensaje:</strong> {{ error_msg }}
+            <span class="count">{{ error_ids|length }} registros</span>
+            <div class="actions">
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="ignore_errors">
+                    {% for eid in error_ids %}
+                    <input type="hidden" name="error_ids" value="{{ eid }}">
+                    {% endfor %}
+                    <button type="submit" class="btn-danger" onclick="return confirm('¿Marcar estos {{ error_ids|length }} registros como omitidos?')">
+                        🗑️ Marcar como Omitido
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- Modal: Crear CEDIS Origen -->
     <div id="createCedisOrigenModal" class="modal">
         <div class="modal-content">
@@ -224,7 +261,16 @@
                     <input type="text" id="map_original_cedis_origen_display" disabled>
                 </div>
                 <div class="form-group">
-                    <label>Mapear a:</label>
+                    <label>Seleccionar CEDIS existente:</label>
+                    <select id="select_target_cedis_origen" onchange="document.getElementById('map_target_cedis_origen').value = this.value" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                        <option value="">-- Seleccione un CEDIS --</option>
+                        {% for cedis in all_cedis %}
+                        <option value="{{ cedis }}">{{ cedis }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>O escribir manualmente:</label>
                     <input type="text" name="target_name" id="map_target_cedis_origen" required>
                 </div>
                 <div class="actions">
@@ -271,7 +317,16 @@
                     <input type="text" id="map_original_sucursal_display" disabled>
                 </div>
                 <div class="form-group">
-                    <label>Mapear a:</label>
+                    <label>Seleccionar sucursal existente:</label>
+                    <select id="select_target_sucursal" onchange="document.getElementById('map_target_sucursal').value = this.value" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                        <option value="">-- Seleccione una sucursal --</option>
+                        {% for sucursal in all_sucursales %}
+                        <option value="{{ sucursal }}">{{ sucursal }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>O escribir manualmente:</label>
                     <input type="text" name="target_name" id="map_target_sucursal" required>
                 </div>
                 <div class="actions">
@@ -397,5 +452,6 @@
             }
         }
     </script>
+    </div>
 </body>
 </html>

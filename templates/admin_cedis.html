@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Administrar CEDIS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 32px;
+        }
+        .nav { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        .nav a { color: #2c2c2c; text-decoration: none; font-weight: 500; font-size: 15px; }
+        .nav a:hover { color: #dc0000; }
+        h1 { font-size: 32px; font-weight: 300; color: #dc0000; margin-bottom: 24px; }
+        .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; }
+        .alert-error { background: #ffebee; border-left: 4px solid #c62828; color: #c62828; }
+        .alert-info { background: #e3f2fd; border-left: 4px solid #1976d2; color: #1565c0; }
+        .card { background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #fafafa; font-weight: 600; color: #333; }
+        tr:hover { background: #f9f9f9; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 13px; }
+        .btn-danger { background: #dc0000; color: white; }
+        .btn-danger:hover { background: #b80000; }
+        .btn-primary { background: #1976d2; color: white; }
+        .btn-primary:hover { background: #1565c0; }
+        .btn-success { background: #388e3c; color: white; }
+        .btn-success:hover { background: #2e7d32; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .form-inline { display: flex; gap: 8px; align-items: center; }
+        .form-inline input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .actions { display: flex; gap: 8px; }
+        .new-form { background: #f5f5f5; padding: 16px; border-radius: 6px; margin-bottom: 24px; }
+        .new-form h3 { margin-bottom: 12px; font-size: 16px; color: #333; }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="nav">
+            <a href="/">Inicio</a>
+            <a href="/admin/cedis/">CEDIS</a>
+            <a href="/admin/sucursales/">Sucursales</a>
+            <a href="/planificacion/normalizar/">Normalizar Planificación</a>
+            <a href="/salidas/normalizar/">Normalizar Salidas</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h1>🏭 Administrar CEDIS (Almacenes)</h1>
+
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <div class="alert alert-info">
+            <strong>💡 Tip:</strong> Aquí defines los CEDIS "oficiales". Cuando subas un Excel con nombres diferentes (ej: "Guatire I" en vez de "Guatire 1"), el sistema te preguntará a cuál mapear.
+        </div>
+
+        <!-- Crear nuevo -->
+        <div class="new-form">
+            <h3>➕ Crear nuevo CEDIS</h3>
+            <form method="post" class="form-inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create">
+                <input type="text" name="new_origin" placeholder="Nombre (ej: Guatire 1)" required style="width: 200px;">
+                <input type="text" name="new_code" placeholder="Código (ej: 1000105)" required style="width: 150px;">
+                <button type="submit" class="btn btn-success">Crear</button>
+            </form>
+        </div>
+
+        <!-- Lista -->
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cedis in cedis_list %}
+                    <tr>
+                        <td>{{ cedis.id }}</td>
+                        <td>
+                            <form method="post" class="form-inline" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="edit">
+                                <input type="hidden" name="cedis_id" value="{{ cedis.id }}">
+                                <input type="text" name="new_code" value="{{ cedis.code }}" style="width: 120px;">
+                        </td>
+                        <td>
+                                <input type="text" name="new_origin" value="{{ cedis.origin }}" style="width: 180px;">
+                        </td>
+                        <td class="actions">
+                                <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                            </form>
+                            <form method="post" style="display: inline;" onsubmit="return confirm('¿Eliminar este CEDIS?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="cedis_id" value="{{ cedis.id }}">
+                                <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #999;">No hay CEDIS registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

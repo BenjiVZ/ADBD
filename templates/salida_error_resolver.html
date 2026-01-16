@@ -6,11 +6,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Resolver Errores - Salidas</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 24px; color: #222; background: #f5f5f5; }
-        h1 { margin-bottom: 8px; color: #c62828; }
-        .nav { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-        .nav a { color: #0b6bcb; text-decoration: none; font-weight: 600; }
-        .nav a:hover { text-decoration: underline; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px 48px 24px;
+        }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 48px;
+            box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
+        }
+        h1 { 
+            font-size: 42px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-bottom: 32px;
+            letter-spacing: -0.5px;
+        }
+        .nav { 
+            display: flex; 
+            gap: 32px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav a { 
+            color: #2c2c2c;
+            text-decoration: none; 
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav a:hover { 
+            color: #dc0000;
+            border-bottom-color: #dc0000;
+        }
         .summary { background: #fff; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #c62828; }
         .error-group { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .error-group h3 { margin-top: 0; color: #c62828; border-bottom: 2px solid #eee; padding-bottom: 8px; }
@@ -29,6 +69,8 @@
         .btn-secondary:hover { background: #616161; }
         .btn-success { background: #388e3c; color: white; }
         .btn-success:hover { background: #2e7d32; }
+        .btn-danger { background: #d32f2f; color: white; }
+        .btn-danger:hover { background: #c62828; }
         .form-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .form-inline input, .form-inline select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .form-inline input { flex: 1; min-width: 200px; }
@@ -38,240 +80,339 @@
         .modal-content h3 { margin-top: 0; }
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; margin-bottom: 4px; font-weight: 600; color: #555; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .alert { padding: 12px; border-radius: 6px; margin-bottom: 16px; }
         .alert-error { background: #ffebee; border-left: 4px solid #c62828; color: #c62828; }
         .alert-success { background: #e8f5e9; border-left: 4px solid #388e3c; color: #2e7d32; }
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <a href="/">Inicio</a>
-        <a href="/salidas/normalizar/">Normalizar</a>
-        <a href="/salidas/errores/">Resolver Errores</a>
-    </nav>
-
-    <h1>🔧 Resolver Errores de Salidas</h1>
-
-    {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
-    {% endif %}
-
-    <div class="summary">
-        <strong>Total de errores:</strong> {{ total_errors }}
-    </div>
-
-    {% if not sucursales_origen_faltantes and not sucursales_destino_faltantes and not productos_faltantes %}
-    <div class="alert alert-success">
-        ✅ No hay errores pendientes de resolver
-    </div>
-    {% endif %}
-
-    <!-- Sucursales Origen Faltantes -->
-    {% if sucursales_origen_faltantes %}
-    <div class="error-group">
-        <h3>🏢 Sucursales Origen No Encontradas</h3>
-        {% for sucursal_name, error_ids in sucursales_origen_faltantes.items %}
-        <div class="error-item">
-            <strong>{{ sucursal_name|default:"(vacío)" }}</strong>
-            <span class="count">{{ error_ids|length }} registros</span>
-            
-            {% if sucursal_name in sucursal_suggestions and sucursal_suggestions|get_item:sucursal_name %}
-            <div class="suggestions">
-                <h4>💡 Sugerencias similares:</h4>
-                {% for suggestion in sucursal_suggestions|get_item:sucursal_name %}
-                <span class="suggestion-item" onclick="selectSuggestion('{{ sucursal_name }}', '{{ suggestion }}', 'sucursal', 'origen')">
-                    {{ suggestion }}
-                </span>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <div class="actions">
-                <button class="btn-primary" onclick="openCreateSucursalModal('{{ sucursal_name }}')">
-                    ➕ Crear Nueva Sucursal
-                </button>
-                <button class="btn-success" onclick="openMapSucursalModal('{{ sucursal_name }}', 'origen')">
-                    🔗 Mapear a Existente
-                </button>
-            </div>
+    <header>
+        <div class="container">
+            <nav class="nav">
+                <a href="/">Inicio</a>
+                <a href="/planificacion/normalizar/">Normalizar Planificación</a>
+                <a href="/salidas/normalizar/">Normalizar Salidas</a>
+                <a href="/tablero/normalizado/">Tablero</a>
+            </nav>
         </div>
-        {% endfor %}
-    </div>
-    {% endif %}
+    </header>
 
-    <!-- Sucursales Destino Faltantes -->
-    {% if sucursales_destino_faltantes %}
-    <div class="error-group">
-        <h3>🏪 Sucursales Destino No Encontradas</h3>
-        {% for sucursal_name, error_ids in sucursales_destino_faltantes.items %}
-        <div class="error-item">
-            <strong>{{ sucursal_name|default:"(vacío)" }}</strong>
-            <span class="count">{{ error_ids|length }} registros</span>
-            
-            {% if sucursal_name in sucursal_suggestions and sucursal_suggestions|get_item:sucursal_name %}
-            <div class="suggestions">
-                <h4>💡 Sugerencias similares:</h4>
-                {% for suggestion in sucursal_suggestions|get_item:sucursal_name %}
-                <span class="suggestion-item" onclick="selectSuggestion('{{ sucursal_name }}', '{{ suggestion }}', 'sucursal', 'destino')">
-                    {{ suggestion }}
-                </span>
-                {% endfor %}
-            </div>
-            {% endif %}
+    <div class="container">
+        <h1>🔧 Resolver Errores de Salidas</h1>
 
-            <div class="actions">
-                <button class="btn-primary" onclick="openCreateSucursalModal('{{ sucursal_name }}')">
-                    ➕ Crear Nueva Sucursal
-                </button>
-                <button class="btn-success" onclick="openMapSucursalModal('{{ sucursal_name }}', 'destino')">
-                    🔗 Mapear a Existente
-                </button>
-            </div>
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <div class="summary">
+            <strong>Total de errores:</strong> {{ total_errors }}
         </div>
-        {% endfor %}
-    </div>
-    {% endif %}
 
-    <!-- Productos Faltantes -->
-    {% if productos_faltantes %}
-    <div class="error-group">
-        <h3>📦 Productos No Encontrados</h3>
-        {% for product_code, error_ids in productos_faltantes.items %}
-        <div class="error-item">
-            <strong>{{ product_code|default:"(vacío)" }}</strong>
-            <span class="count">{{ error_ids|length }} registros</span>
-            
-            {% if product_code in product_suggestions and product_suggestions|get_item:product_code %}
-            <div class="suggestions">
-                <h4>💡 Sugerencias similares:</h4>
-                {% for suggestion in product_suggestions|get_item:product_code %}
-                <span class="suggestion-item" onclick="selectSuggestion('{{ product_code }}', '{{ suggestion.code }}', 'product')">
-                    {{ suggestion.code }} - {{ suggestion.name|truncatechars:30 }}
-                </span>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <div class="actions">
-                <button class="btn-primary" onclick="openCreateProductModal('{{ product_code }}')">
-                    ➕ Crear Nuevo Producto
-                </button>
-                <button class="btn-success" onclick="openMapProductModal('{{ product_code }}')">
-                    🔗 Mapear a Existente
-                </button>
-            </div>
+        {% if not cedis_origen_faltantes and not sucursales_destino_faltantes and not productos_faltantes and not otros_errores %}
+        <div class="alert alert-success">
+            ✅ No hay errores pendientes de resolver
         </div>
-        {% endfor %}
-    </div>
-    {% endif %}
+        {% endif %}
 
-    <!-- Modals (mismos que planificacion_error_resolver.html) -->
-    <div id="createSucursalModal" class="modal">
-        <div class="modal-content">
-            <h3>➕ Crear Nueva Sucursal</h3>
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="create_sucursal">
-                <div class="form-group">
-                    <label>Nombre:</label>
-                    <input type="text" name="sucursal_name" id="new_sucursal_name" required>
-                </div>
-                <div class="form-group">
-                    <label>BPL ID:</label>
-                    <input type="number" name="bpl_id" required>
-                </div>
+        <!-- CEDIS Origen Faltantes -->
+        {% if cedis_origen_faltantes %}
+        <div class="error-group">
+            <h3>🏭 CEDIS Origen (Almacenes) No Encontrados</h3>
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin-bottom: 20px;">
+                💡 <strong>Solución:</strong> Ve a <a href="/biblioteca/cedis/" style="color: #dc0000; font-weight: 600;">Biblioteca de CEDIS</a> para crear o mapear estos nombres.
+            </div>
+            {% for cedis_name, error_ids in cedis_origen_faltantes.items %}
+            <div class="error-item">
+                <strong>{{ cedis_name|default:"(vacío)" }}</strong>
+                <span class="count">{{ error_ids|length }} registros afectados</span>
+                
                 <div class="actions">
-                    <button type="submit" class="btn-primary">Crear</button>
-                    <button type="button" class="btn-secondary" onclick="closeModal('createSucursalModal')">Cancelar</button>
+                    <a href="/biblioteca/cedis/" class="btn-primary">
+                        🔧 Ir a Biblioteca de CEDIS
+                    </a>
                 </div>
-            </form>
+            </div>
+            {% endfor %}
         </div>
-    </div>
+        {% endif %}
 
-    <div id="mapSucursalModal" class="modal">
-        <div class="modal-content">
-            <h3>🔗 Mapear Sucursal</h3>
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="map_sucursal">
-                <input type="hidden" name="original_name" id="map_original_sucursal">
-                <input type="hidden" name="field_type" id="map_field_type">
-                <div class="form-group">
-                    <label>Nombre en datos:</label>
-                    <input type="text" id="map_original_sucursal_display" disabled>
-                </div>
-                <div class="form-group">
-                    <label>Mapear a:</label>
-                    <input type="text" name="target_name" id="map_target_sucursal" required>
-                </div>
+        <!-- Sucursales Destino Faltantes -->
+        {% if sucursales_destino_faltantes %}
+        <div class="error-group">
+            <h3>🏢 Sucursales/Tiendas Destino No Encontradas</h3>
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin-bottom: 20px;">
+                💡 <strong>Solución:</strong> Ve a <a href="/biblioteca/sucursales/" style="color: #dc0000; font-weight: 600;">Biblioteca de Sucursales</a> para crear o mapear estos nombres.
+            </div>
+            {% for sucursal_name, error_ids in sucursales_destino_faltantes.items %}
+            <div class="error-item">
+                <strong>{{ sucursal_name|default:"(vacío)" }}</strong>
+                <span class="count">{{ error_ids|length }} registros afectados</span>
+                
                 <div class="actions">
-                    <button type="submit" class="btn-success">Mapear</button>
-                    <button type="button" class="btn-secondary" onclick="closeModal('mapSucursalModal')">Cancelar</button>
+                    <a href="/biblioteca/sucursales/" class="btn-primary">
+                        🔧 Ir a Biblioteca de Sucursales
+                    </a>
                 </div>
-            </form>
+            </div>
+            {% endfor %}
         </div>
-    </div>
+        {% endif %}
 
-    <div id="createProductModal" class="modal">
-        <div class="modal-content">
-            <h3>➕ Crear Nuevo Producto</h3>
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="create_product">
-                <div class="form-group">
-                    <label>Código:</label>
-                    <input type="text" name="product_code" id="new_product_code" required>
+        <!-- Productos Faltantes -->
+        {% if productos_faltantes %}
+        <div class="error-group">
+            <h3>📦 Productos No Encontrados</h3>
+            {% for product_code, error_ids in productos_faltantes.items %}
+            <div class="error-item">
+                <strong>{{ product_code|default:"(vacío)" }}</strong>
+                <span class="count">{{ error_ids|length }} registros</span>
+                
+                {% if product_code in product_suggestions and product_suggestions|get_item:product_code %}
+                <div class="suggestions">
+                    <h4>💡 Sugerencias similares:</h4>
+                    {% for suggestion in product_suggestions|get_item:product_code %}
+                    <span class="suggestion-item" onclick="selectProductSuggestion('{{ product_code }}', '{{ suggestion.code }}')">
+                        {{ suggestion.code }} - {{ suggestion.name }}
+                    </span>
+                    {% endfor %}
                 </div>
-                <div class="form-group">
-                    <label>Nombre:</label>
-                    <input type="text" name="product_name" required>
-                </div>
-                <div class="form-group">
-                    <label>Grupo:</label>
-                    <input type="text" name="product_group">
-                </div>
+                {% endif %}
+
                 <div class="actions">
-                    <button type="submit" class="btn-primary">Crear</button>
-                    <button type="button" class="btn-secondary" onclick="closeModal('createProductModal')">Cancelar</button>
+                    <button class="btn-primary" onclick="openCreateProductModal('{{ product_code }}')">
+                        ➕ Crear Nuevo Producto
+                    </button>
+                    <button class="btn-success" onclick="openMapProductModal('{{ product_code }}')">
+                        🔗 Mapear a Existente
+                    </button>
+                    <form method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="ignore_errors">
+                        {% for eid in error_ids %}
+                        <input type="hidden" name="error_ids" value="{{ eid }}">
+                        {% endfor %}
+                        <button type="submit" class="btn-danger" onclick="return confirm('¿Marcar estos {{ error_ids|length }} registros como omitidos?')">
+                            🗑️ Ignorar
+                        </button>
+                    </form>
                 </div>
-            </form>
+            </div>
+            {% endfor %}
         </div>
-    </div>
+        {% endif %}
 
-    <div id="mapProductModal" class="modal">
-        <div class="modal-content">
-            <h3>🔗 Mapear Producto</h3>
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="map_product">
-                <input type="hidden" name="original_code" id="map_original_product">
-                <div class="form-group">
-                    <label>Código en datos:</label>
-                    <input type="text" id="map_original_product_display" disabled>
-                </div>
-                <div class="form-group">
-                    <label>Mapear a:</label>
-                    <input type="text" name="target_code" id="map_target_product" required>
-                </div>
+        <!-- Otros Errores -->
+        {% if otros_errores %}
+        <div class="error-group">
+            <h3>⚠️ Otros Errores</h3>
+            <p style="color: #666; margin-bottom: 16px;">Errores que no encajan en las categorías anteriores. Revisa los mensajes para identificar el problema.</p>
+            {% for error_msg, error_ids in otros_errores.items %}
+            <div class="error-item">
+                <strong>Mensaje:</strong> {{ error_msg }}
+                <span class="count">{{ error_ids|length }} registros</span>
                 <div class="actions">
-                    <button type="submit" class="btn-success">Mapear</button>
-                    <button type="button" class="btn-secondary" onclick="closeModal('mapProductModal')">Cancelar</button>
+                    <form method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="ignore_errors">
+                        {% for eid in error_ids %}
+                        <input type="hidden" name="error_ids" value="{{ eid }}">
+                        {% endfor %}
+                        <button type="submit" class="btn-danger" onclick="return confirm('¿Marcar estos {{ error_ids|length }} registros como omitidos?')">
+                            🗑️ Marcar como Omitido
+                        </button>
+                    </form>
                 </div>
-            </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Modal: Crear CEDIS -->
+        <div id="createCedisModal" class="modal">
+            <div class="modal-content">
+                <h3>➕ Crear Nuevo CEDIS (Almacén)</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_cedis">
+                    <div class="form-group">
+                        <label>Nombre del CEDIS:</label>
+                        <input type="text" name="cedis_name" id="new_cedis_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Código:</label>
+                        <input type="text" name="cedis_code" required placeholder="Ej: 1000105">
+                    </div>
+                    <div class="actions">
+                        <button type="submit" class="btn-primary">Crear</button>
+                        <button type="button" class="btn-secondary" onclick="closeModal('createCedisModal')">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal: Mapear CEDIS -->
+        <div id="mapCedisModal" class="modal">
+            <div class="modal-content">
+                <h3>🔗 Mapear CEDIS a Existente</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="map_cedis">
+                    <input type="hidden" name="original_name" id="map_original_cedis">
+                    <div class="form-group">
+                        <label>CEDIS Original:</label>
+                        <input type="text" id="map_original_cedis_display" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Seleccionar CEDIS existente:</label>
+                        <select id="select_target_cedis" onchange="document.getElementById('map_target_cedis').value = this.value" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                            <option value="">-- Seleccione un CEDIS --</option>
+                            {% for cedis in all_cedis %}
+                            <option value="{{ cedis }}">{{ cedis }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>O escribir manualmente:</label>
+                        <input type="text" name="target_name" id="map_target_cedis" required>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" class="btn-success">Mapear</button>
+                        <button type="button" class="btn-secondary" onclick="closeModal('mapCedisModal')">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal: Crear Sucursal -->
+        <div id="createSucursalModal" class="modal">
+            <div class="modal-content">
+                <h3>➕ Crear Nueva Sucursal/Tienda</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_sucursal">
+                    <div class="form-group">
+                        <label>Nombre:</label>
+                        <input type="text" name="sucursal_name" id="new_sucursal_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>BPL ID:</label>
+                        <input type="number" name="bpl_id" required>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" class="btn-primary">Crear</button>
+                        <button type="button" class="btn-secondary" onclick="closeModal('createSucursalModal')">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal: Mapear Sucursal -->
+        <div id="mapSucursalModal" class="modal">
+            <div class="modal-content">
+                <h3>🔗 Mapear Sucursal a Existente</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="map_sucursal">
+                    <input type="hidden" name="original_name" id="map_original_sucursal">
+                    <input type="hidden" name="field_type" value="destino">
+                    <div class="form-group">
+                        <label>Sucursal Original:</label>
+                        <input type="text" id="map_original_sucursal_display" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Seleccionar sucursal existente:</label>
+                        <select id="select_target_sucursal" onchange="document.getElementById('map_target_sucursal').value = this.value" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                            <option value="">-- Seleccione una sucursal --</option>
+                            {% for sucursal in all_sucursales %}
+                            <option value="{{ sucursal }}">{{ sucursal }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>O escribir manualmente:</label>
+                        <input type="text" name="target_name" id="map_target_sucursal" required>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" class="btn-success">Mapear</button>
+                        <button type="button" class="btn-secondary" onclick="closeModal('mapSucursalModal')">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal: Crear Producto -->
+        <div id="createProductModal" class="modal">
+            <div class="modal-content">
+                <h3>➕ Crear Nuevo Producto</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_product">
+                    <div class="form-group">
+                        <label>Código:</label>
+                        <input type="text" name="product_code" id="new_product_code" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre:</label>
+                        <input type="text" name="product_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Grupo (opcional):</label>
+                        <input type="text" name="product_group">
+                    </div>
+                    <div class="actions">
+                        <button type="submit" class="btn-primary">Crear</button>
+                        <button type="button" class="btn-secondary" onclick="closeModal('createProductModal')">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal: Mapear Producto -->
+        <div id="mapProductModal" class="modal">
+            <div class="modal-content">
+                <h3>🔗 Mapear Producto a Existente</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="map_product">
+                    <input type="hidden" name="original_code" id="map_original_product">
+                    <div class="form-group">
+                        <label>Código Original:</label>
+                        <input type="text" id="map_original_product_display" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Mapear a código:</label>
+                        <input type="text" name="target_code" id="map_target_product" required>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" class="btn-success">Mapear</button>
+                        <button type="button" class="btn-secondary" onclick="closeModal('mapProductModal')">Cancelar</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
     <script>
+        function openCreateCedisModal(name) {
+            document.getElementById('new_cedis_name').value = name;
+            document.getElementById('createCedisModal').classList.add('active');
+        }
+
+        function openMapCedisModal(name) {
+            document.getElementById('map_original_cedis').value = name;
+            document.getElementById('map_original_cedis_display').value = name;
+            document.getElementById('mapCedisModal').classList.add('active');
+        }
+
         function openCreateSucursalModal(name) {
             document.getElementById('new_sucursal_name').value = name;
             document.getElementById('createSucursalModal').classList.add('active');
         }
 
-        function openMapSucursalModal(name, fieldType) {
+        function openMapSucursalModal(name) {
             document.getElementById('map_original_sucursal').value = name;
             document.getElementById('map_original_sucursal_display').value = name;
-            document.getElementById('map_field_type').value = fieldType;
             document.getElementById('mapSucursalModal').classList.add('active');
         }
 
@@ -290,21 +431,28 @@
             document.getElementById(modalId).classList.remove('active');
         }
 
-        function selectSuggestion(original, target, type, fieldType) {
-            if (type === 'sucursal') {
-                document.getElementById('map_original_sucursal').value = original;
-                document.getElementById('map_original_sucursal_display').value = original;
-                document.getElementById('map_target_sucursal').value = target;
-                document.getElementById('map_field_type').value = fieldType || 'both';
-                document.getElementById('mapSucursalModal').classList.add('active');
-            } else if (type === 'product') {
-                document.getElementById('map_original_product').value = original;
-                document.getElementById('map_original_product_display').value = original;
-                document.getElementById('map_target_product').value = target;
-                document.getElementById('mapProductModal').classList.add('active');
-            }
+        function selectCedisSuggestion(original, target) {
+            document.getElementById('map_original_cedis').value = original;
+            document.getElementById('map_original_cedis_display').value = original;
+            document.getElementById('map_target_cedis').value = target;
+            document.getElementById('mapCedisModal').classList.add('active');
         }
 
+        function selectSucursalSuggestion(original, target) {
+            document.getElementById('map_original_sucursal').value = original;
+            document.getElementById('map_original_sucursal_display').value = original;
+            document.getElementById('map_target_sucursal').value = target;
+            document.getElementById('mapSucursalModal').classList.add('active');
+        }
+
+        function selectProductSuggestion(original, target) {
+            document.getElementById('map_original_product').value = original;
+            document.getElementById('map_original_product_display').value = original;
+            document.getElementById('map_target_product').value = target;
+            document.getElementById('mapProductModal').classList.add('active');
+        }
+
+        // Cerrar modal al hacer click fuera
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.classList.remove('active');

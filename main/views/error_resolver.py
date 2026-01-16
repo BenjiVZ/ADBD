@@ -20,18 +20,23 @@ class PlanificacionErrorResolverView(View):
         cedis_origen_faltantes = defaultdict(list)
         sucursales_faltantes = defaultdict(list)
         productos_faltantes = defaultdict(list)
+        otros_errores = defaultdict(list)
         
         for error in errors:
             notes = error.normalize_notes or ""
-            if "CEDIS origen no encontrado" in notes:
+            # Buscar múltiples variantes de mensajes de error
+            if ("CEDIS" in notes and "origen" in notes) or ("cedis" in notes and "origen" in notes) or ("almacén" in notes and "origen" in notes) or "origen no es un CEDIS" in notes or "Origen NO es un almacén CEDIS" in notes or "CEDIS (almacén) origen" in notes:
                 origen_name = error.cendis
                 cedis_origen_faltantes[origen_name].append(error.id)
-            elif "Sucursal no encontrada" in notes:
+            elif "Sucursal" in notes or "sucursal" in notes or "tienda" in notes:
                 sucursal_name = error.sucursal
                 sucursales_faltantes[sucursal_name].append(error.id)
-            elif "Producto no encontrado" in notes:
+            elif "Producto" in notes or "producto" in notes:
                 product_code = error.item_code
                 productos_faltantes[product_code].append(error.id)
+            else:
+                # Errores que no encajan en las categorías anteriores
+                otros_errores[notes[:100]].append(error.id)
         
         # Obtener sucursales, cendis y productos existentes para sugerencias
         existing_sucursales = list(Sucursal.objects.values_list('name', flat=True))
@@ -88,9 +93,13 @@ class PlanificacionErrorResolverView(View):
             "cedis_origen_faltantes": dict(cedis_origen_faltantes),
             "sucursales_faltantes": dict(sucursales_faltantes),
             "productos_faltantes": dict(productos_faltantes),
+            "otros_errores": dict(otros_errores),
             "cedis_origen_suggestions": cedis_origen_suggestions,
             "sucursal_suggestions": sucursal_suggestions,
             "product_suggestions": product_suggestions,
+            "all_sucursales": sorted(existing_sucursales),
+            "all_cedis": sorted(existing_cendis),
+            "all_products": sorted(existing_products, key=lambda x: x[0]),
             "total_errors": errors.count(),
         })
     
@@ -168,6 +177,11 @@ class PlanificacionErrorResolverView(View):
                     normalized_at=None
                 )
                 
+                # Redirigir a normalizar para que procese los cambios
+                # Si no hay más errores, ir a normalizar; si hay, quedarse aquí
+                remaining_errors = Planificacion.objects.filter(normalize_status="error").count()
+                if remaining_errors == 0:
+                    return redirect("planning_normalize")
                 return redirect("planificacion_error_resolver")
         except Exception as e:
             return render(request, self.template_name, {
@@ -331,27 +345,52 @@ class SalidaErrorResolverView(View):
     def get(self, request, *args, **kwargs):
         errors = Salida.objects.filter(normalize_status="error")
         
-        sucursales_origen_faltantes = defaultdict(list)
+        cedis_origen_faltantes = defaultdict(list)
         sucursales_destino_faltantes = defaultdict(list)
         productos_faltantes = defaultdict(list)
+        otros_errores = defaultdict(list)
         
         for error in errors:
             notes = error.normalize_notes or ""
-            if "Sucursal origen no encontrada" in notes:
-                sucursal_name = error.nombre_sucursal_origen
-                sucursales_origen_faltantes[sucursal_name].append(error.id)
-            if "Sucursal destino no encontrada" in notes:
-                sucursal_name = error.nombre_sucursal_destino
+            # Detectar errores de CEDIS origen
+            if ("CEDIS" in notes and "origen" in notes) or ("cedis" in notes and "origen" in notes) or ("almacén" in notes and "origen" in notes) or "origen NO es un almacén CEDIS" in notes or "Origen NO es un almacén CEDIS" in notes:
+                cedis_name = error.nombre_sucursal_origen
+                cedis_origen_faltantes[cedis_name].append(error.id)
+            # Detectar errores de Sucursal destino
+            elif "Sucursal" in notes or "sucursal" in notes or "tienda destino" in notes:
+                # Usar sucursal_destino_propuesto como principal, fallback a nombre_sucursal_destino
+                sucursal_name = error.sucursal_destino_propuesto or error.nombre_sucursal_destino
                 sucursales_destino_faltantes[sucursal_name].append(error.id)
-            if "Producto no encontrado" in notes:
+            # Detectar errores de Producto
+            elif "Producto" in notes or "producto" in notes:
                 product_code = error.sku
                 productos_faltantes[product_code].append(error.id)
+            else:
+                # Otros errores
+                otros_errores[notes[:100]].append(error.id)
         
+        existing_cedis = list(Cendis.objects.values_list('origin', flat=True))
         existing_sucursales = list(Sucursal.objects.values_list('name', flat=True))
         existing_products = list(Product.objects.values_list('code', 'name'))
         
+        # Sugerencias para CEDIS origen
+        cedis_suggestions = {}
+        for cedis_name in cedis_origen_faltantes.keys():
+            if cedis_name:
+                matches = difflib.get_close_matches(
+                    cedis_name.lower(),
+                    [c.lower() for c in existing_cedis],
+                    n=3,
+                    cutoff=0.6
+                )
+                cedis_suggestions[cedis_name] = [
+                    c for c in existing_cedis
+                    if c.lower() in matches
+                ]
+        
+        # Sugerencias para Sucursales destino
         sucursal_suggestions = {}
-        for sucursal_name in set(list(sucursales_origen_faltantes.keys()) + list(sucursales_destino_faltantes.keys())):
+        for sucursal_name in sucursales_destino_faltantes.keys():
             if sucursal_name:
                 matches = difflib.get_close_matches(
                     sucursal_name.lower(),
@@ -364,6 +403,7 @@ class SalidaErrorResolverView(View):
                     if s.lower() in matches
                 ]
         
+        # Sugerencias para Productos
         product_suggestions = {}
         for product_code in productos_faltantes.keys():
             if product_code:
@@ -380,18 +420,27 @@ class SalidaErrorResolverView(View):
                 ]
         
         return render(request, self.template_name, {
-            "sucursales_origen_faltantes": dict(sucursales_origen_faltantes),
+            "cedis_origen_faltantes": dict(cedis_origen_faltantes),
             "sucursales_destino_faltantes": dict(sucursales_destino_faltantes),
             "productos_faltantes": dict(productos_faltantes),
+            "otros_errores": dict(otros_errores),
+            "cedis_suggestions": cedis_suggestions,
             "sucursal_suggestions": sucursal_suggestions,
             "product_suggestions": product_suggestions,
+            "all_sucursales": sorted(existing_sucursales),
+            "all_cedis": sorted(existing_cedis),
+            "all_products": sorted(existing_products, key=lambda x: x[0]),
             "total_errors": errors.count(),
         })
     
     def post(self, request, *args, **kwargs):
         action = request.POST.get("action")
         
-        if action == "create_sucursal":
+        if action == "create_cedis":
+            return self._create_cedis(request)
+        elif action == "map_cedis":
+            return self._map_cedis(request)
+        elif action == "create_sucursal":
             return self._create_sucursal(request)
         elif action == "map_sucursal":
             return self._map_sucursal(request)
@@ -399,8 +448,67 @@ class SalidaErrorResolverView(View):
             return self._create_product(request)
         elif action == "map_product":
             return self._map_product(request)
+        elif action == "ignore_errors":
+            return self._ignore_errors(request)
         
         return redirect("salida_error_resolver")
+    
+    def _create_cedis(self, request):
+        cedis_name = request.POST.get("cedis_name")
+        cedis_code = request.POST.get("cedis_code")
+        
+        if not cedis_name or not cedis_code:
+            return render(request, self.template_name, {
+                "error": "Nombre y Código son requeridos",
+            })
+        
+        try:
+            with transaction.atomic():
+                cedis = Cendis.objects.create(
+                    origin=cedis_name.strip(),
+                    code=cedis_code.strip()
+                )
+                
+                Salida.objects.filter(
+                    normalize_status="error",
+                    nombre_sucursal_origen__iexact=cedis_name
+                ).update(
+                    normalize_status="pending",
+                    normalize_notes="",
+                    normalized_at=None
+                )
+                
+                return redirect("salida_error_resolver")
+        except Exception as e:
+            return render(request, self.template_name, {
+                "error": f"Error al crear CEDIS: {str(e)}",
+            })
+    
+    def _map_cedis(self, request):
+        original_name = request.POST.get("original_name")
+        target_name = request.POST.get("target_name")
+        
+        if not original_name or not target_name:
+            return render(request, self.template_name, {
+                "error": "Nombre original y objetivo son requeridos",
+            })
+        
+        try:
+            with transaction.atomic():
+                Salida.objects.filter(
+                    nombre_sucursal_origen__iexact=original_name
+                ).update(
+                    nombre_sucursal_origen=target_name,
+                    normalize_status="pending",
+                    normalize_notes="",
+                    normalized_at=None
+                )
+                
+                return redirect("salida_error_resolver")
+        except Exception as e:
+            return render(request, self.template_name, {
+                "error": f"Error al mapear CEDIS: {str(e)}",
+            })
     
     def _create_sucursal(self, request):
         sucursal_name = request.POST.get("sucursal_name")
@@ -418,6 +526,7 @@ class SalidaErrorResolverView(View):
                     bpl_id=int(bpl_id)
                 )
                 
+                # Resetear errores que coincidan con origen
                 Salida.objects.filter(
                     normalize_status="error",
                     nombre_sucursal_origen__iexact=sucursal_name
@@ -427,9 +536,20 @@ class SalidaErrorResolverView(View):
                     normalized_at=None
                 )
                 
+                # Resetear errores que coincidan con destino (nombre_sucursal_destino)
                 Salida.objects.filter(
                     normalize_status="error",
                     nombre_sucursal_destino__iexact=sucursal_name
+                ).update(
+                    normalize_status="pending",
+                    normalize_notes="",
+                    normalized_at=None
+                )
+                
+                # Resetear errores que coincidan con destino (sucursal_destino_propuesto)
+                Salida.objects.filter(
+                    normalize_status="error",
+                    sucursal_destino_propuesto__iexact=sucursal_name
                 ).update(
                     normalize_status="pending",
                     normalize_notes="",
@@ -465,10 +585,19 @@ class SalidaErrorResolverView(View):
                     )
                 
                 if field_type in ["destino", "both"]:
+                    # Actualizar tanto nombre_sucursal_destino como sucursal_destino_propuesto
                     Salida.objects.filter(
                         nombre_sucursal_destino__iexact=original_name
                     ).update(
                         nombre_sucursal_destino=target_name,
+                        normalize_status="pending",
+                        normalize_notes="",
+                        normalized_at=None
+                    )
+                    Salida.objects.filter(
+                        sucursal_destino_propuesto__iexact=original_name
+                    ).update(
+                        sucursal_destino_propuesto=target_name,
                         normalize_status="pending",
                         normalize_notes="",
                         normalized_at=None
@@ -537,4 +666,20 @@ class SalidaErrorResolverView(View):
         except Exception as e:
             return render(request, self.template_name, {
                 "error": f"Error al mapear producto: {str(e)}",
+            })
+    
+    def _ignore_errors(self, request):
+        error_ids = request.POST.getlist("error_ids")
+        
+        try:
+            with transaction.atomic():
+                Salida.objects.filter(id__in=error_ids).update(
+                    normalize_status="ignored",
+                    normalize_notes="Ignorado manualmente"
+                )
+                
+                return redirect("salida_error_resolver")
+        except Exception as e:
+            return render(request, self.template_name, {
+                "error": f"Error al ignorar: {str(e)}",
             })

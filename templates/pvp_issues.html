@@ -190,6 +190,30 @@
             <span class="badge"><a href="/faltantes/">Productos con faltantes</a></span>
         </div>
 
+        {% if messages %}
+            <div style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                {% for message in messages %}
+                    <p style="margin: 0; color: #2e7d32;">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div style="background: #ffffff; border: 1px solid #e8e8e8; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+            <h3 style="margin-top: 0; font-size: 18px; font-weight: 500; color: #2c2c2c; margin-bottom: 16px;">Acciones Rápidas</h3>
+            <form method="post" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                {% csrf_token %}
+                <button type="submit" name="action" value="auto_link_products" class="btn btn-primary" 
+                        onclick="return confirm('¿Vincular automáticamente todos los PVPs sin producto donde SKU = Código de Producto?')">
+                    🔗 Auto-vincular Productos
+                </button>
+                <button type="submit" name="action" value="delete_duplicates" class="btn btn-secondary"
+                        onclick="return confirm('⚠️ Esto eliminará todos los duplicados excepto el primero. ¿Continuar?')" 
+                        style="background: #ff5722;">
+                    🗑️ Eliminar Duplicados
+                </button>
+            </form>
+        </div>
+
         <form method="get" class="filters">
             <strong>Ocultar columnas</strong>
             {% for field in optional_fields %}

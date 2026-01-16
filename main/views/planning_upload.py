@@ -204,7 +204,7 @@ class PlanningUploadView(View):
                 stock_tienda=_parse_decimal(_value(row, _pick(indexes, "stock_tienda"))),
                 stock_cedis=_parse_decimal(_value(row, _pick(indexes, "stock_cedis", "stock_cedis"))),
                 necesidad_urgente=_parse_bool(_value(row, _pick(indexes, "necesidad_urgente", "urgente"))),
-                cendis=str(_value(row, _pick(indexes, "cendis", "cendis", "origen")) or ""),
+                cendis=str(_value(row, _pick(indexes, "cendis", "origen", "origen_picking")) or ""),
                 no_planificar=_parse_bool(_value(row, _pick(indexes, "no_planificar", "no_planificar"))),
                 ng=_parse_decimal(_value(row, _pick(indexes, "ng"))),
                 ccct=_parse_decimal(_value(row, _pick(indexes, "ccct"))),

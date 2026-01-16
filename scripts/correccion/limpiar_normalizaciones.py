@@ -3,7 +3,12 @@ Script para limpiar todas las normalizaciones y restablecer el estado inicial.
 Borra todos los registros normalizados y resetea el estado de las tablas originales.
 """
 import os
+import sys
 import django
+
+# Agregar el directorio raíz del proyecto al path
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, BASE_DIR)
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ADB.settings')
 django.setup()
