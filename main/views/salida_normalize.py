@@ -37,7 +37,39 @@ class SalidaNormalizeView(View):
         # Verificar si es una acción de limpieza
         action = request.POST.get('action')
         reset_message = None
-        if action == 'reset_date' and selected_date:
+        
+        # Si es solo limpieza (sin normalización), hacerlo y retornar
+        if action == 'reset_all':
+            # Limpiar TODAS las normalizaciones de salidas
+            
+            # Resetear estado de TODAS las Salidas
+            reset_count = Salida.objects.all().update(
+                normalize_status='pending',
+                normalize_notes='',
+                normalized_at=None
+            )
+            
+            # Eliminar TODOS los registros normalizados
+            deleted_count = SalidaNormalizada.objects.all().delete()[0]
+            
+            print(f"🗑️ Limpiadas TODAS las normalizaciones: {reset_count} registros reseteados, {deleted_count} normalizados eliminados")
+            
+            # Retornar inmediatamente después de limpiar (no normalizar automáticamente)
+            summary = self._summary(selected_date)
+            errors = self._errors(selected_date)
+            pending = self._pending(selected_date)
+            
+            return render(request, self.template_name, {
+                "summary": summary,
+                "errors": errors,
+                "pending": pending,
+                "selected_date": selected_date,
+                "dates": dates,
+                "ran": False,
+                "reset_message": f"✅ Todas las normalizaciones limpiadas: {reset_count} registros reseteados, {deleted_count} eliminados. Presiona 'Normalizar pendientes' para procesar."
+            })
+            
+        elif action == 'reset_date' and selected_date:
             # Limpiar normalizaciones de esta fecha específica
             # selected_date ya es un objeto date, no necesita parsear
             fecha_obj = selected_date if isinstance(selected_date, datetime.date) else datetime.datetime.strptime(selected_date, "%Y-%m-%d").date()
@@ -77,8 +109,19 @@ class SalidaNormalizeView(View):
         print(f"✅ Cargados {len(mapeos_cedis)} mapeos de CEDIS")
         print(f"✅ Cargados {len(mapeos_sucursales)} mapeos de Sucursales")
         
-        sucursales_map = {s.name.lower(): s for s in sucursales}
-        cendis_map = {c.origin.lower(): c for c in cendis_list}
+        # Mapear por NOMBRE y por CÓDIGO/ID
+        sucursales_map = {}
+        for s in sucursales:
+            sucursales_map[s.name.lower()] = s  # Por nombre
+            sucursales_map[str(s.bpl_id).lower()] = s  # Por BPL_ID
+        
+        cendis_map = {}
+        for c in cendis_list:
+            cendis_map[c.origin.lower()] = c  # Por nombre (origin)
+            cendis_map[str(c.id).lower()] = c  # Por ID
+            if c.code:
+                cendis_map[c.code.lower()] = c  # Por código
+        
         products_map = {p.code.lower(): p for p in products}
         
         # Mapeos: nombre_crudo -> entidad_oficial

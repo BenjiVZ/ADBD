@@ -198,6 +198,12 @@
     </header>
     <div class="container">
         <h1>Normalizar planificación</h1>
+        
+        {% if reset_message %}
+        <div style="background: #4caf50; color: white; padding: 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 500;">
+            {{ reset_message }}
+        </div>
+        {% endif %}
 
         <div class="summary">
             <div class="card">Pendientes<strong>{{ summary.pending }}</strong></div>
@@ -244,6 +250,13 @@
                 </button>
             </form>
             {% endif %}
+            <form method="post" style="display: inline;" onsubmit='return confirm("⚠️ ¿Estás seguro? Esto limpiará TODAS las normalizaciones de planificación y las volverá a procesar desde cero.");'>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reset_all" />
+                <button class="btn" type="submit" style="background: #d32f2f; color: white;">
+                    🗑️ Limpiar TODAS las normalizaciones
+                </button>
+            </form>
             {% if summary.error > 0 %}
             <a href="/planificacion/errores/" class="btn btn-secondary">
                 Resolver {{ summary.error }} errores

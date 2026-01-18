@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Corrección de CEDIS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px 48px 24px;
+        }
+        header {
+            background: #ffffff;
+            border-bottom: 2px solid #dc0000;
+            padding: 20px 0;
+            margin-bottom: 48px;
+            box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
+        }
+        .nav { 
+            display: flex; 
+            gap: 32px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav a { 
+            color: #2c2c2c;
+            text-decoration: none; 
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav a:hover { 
+            color: #dc0000;
+            border-bottom-color: #dc0000;
+        }
+        h1 {
+            font-size: 42px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #5a5a5a;
+            margin-bottom: 32px;
+        }
+        .summary { 
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        .card { 
+            background: #fafafa;
+            padding: 20px;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            border-color: #dc0000;
+            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.1);
+        }
+        .summary .card {
+            text-align: center;
+        }
+        .card p {
+            font-size: 14px;
+            color: #5a5a5a;
+            margin-bottom: 8px;
+        }
+        .card strong {
+            display: block;
+            font-size: 28px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-top: 8px;
+        }
+        .info-card {
+            background: #f1f8f4;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .info-card strong {
+            color: #2c2c2c;
+            font-size: 16px;
+            display: inline;
+        }
+        .cedis-oficiales {
+            background: #fafafa;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+        .cedis-oficiales h2 {
+            font-size: 24px;
+            font-weight: 400;
+            color: #dc0000;
+            margin-bottom: 16px;
+        }
+        .cedis-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        .cedis-item {
+            background: #ffffff;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            border: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .cedis-item .code {
+            font-weight: 500;
+            color: #2c2c2c;
+        }
+        .cedis-item .id {
+            background: #dc0000;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .btn { 
+            padding: 12px 24px;
+            background: #dc0000;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #b80000;
+            box-shadow: 0 4px 12px rgba(220, 0, 0, 0.2);
+        }
+        .btn-secondary {
+            background: #2c2c2c;
+        }
+        .btn-secondary:hover {
+            background: #1a1a1a;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 16px 0;
+            z-index: 10;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td { 
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 14px;
+        }
+        th { 
+            background: #fafafa;
+            font-weight: 500;
+            color: #2c2c2c;
+            border-bottom: 2px solid #e8e8e8;
+        }
+        td {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover {
+            background: #fafafa;
+        }
+        td select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #ffffff;
+        }
+        td select:focus {
+            outline: none;
+            border-color: #dc0000;
+        }
+        .search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #dc0000;
+        }
+        .messages {
+            margin-bottom: 24px;
+        }
+        .alert {
+            padding: 16px 20px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            border-left: 4px solid;
+        }
+        .alert-success {
+            background: #f1f8f4;
+            color: #2c2c2c;
+            border-left-color: #4caf50;
+        }
+        .alert-warning {
+            background: #fff8e1;
+            color: #2c2c2c;
+            border-left-color: #ffc107;
+        }
+        .nombre-col {
+            font-weight: 500;
+            color: #2c2c2c;
+        }
+        .count-badge {
+            display: inline-block;
+            background: #e8e8e8;
+            color: #2c2c2c;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav class="nav">
+                <a href="/">Inicio</a>
+                <a href="/subidas/">Subir archivos</a>
+                <a href="/correccion/cedis/">Corregir CEDIS</a>
+                <a href="/correccion/sucursales/">Corregir Sucursales</a>
+                <a href="/planificacion/normalizar/">Normalizar Planificación</a>
+                <a href="/salidas/normalizar/">Normalizar Salidas</a>
+                <a href="/tablero/normalizado/">Tablero</a>
+            </nav>
+        </div>
+    </header>
+    <div class="container">
+        <h1>🏭 Corrección de CEDIS</h1>
+        <p class="subtitle">Corrige nombres de almacenes/centros de distribución en datos crudos asignando códigos oficiales</p>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="summary">
+            <div class="card">
+                <p>Nombres únicos detectados</p>
+                <strong>{{ total_nombres }}</strong>
+            </div>
+            <div class="card">
+                <p>Registros en Planificación</p>
+                <strong>{{ total_registros_planificacion }}</strong>
+            </div>
+            <div class="card">
+                <p>Registros en Salidas</p>
+                <strong>{{ total_registros_salida }}</strong>
+            </div>
+            <div class="card">
+                <p>CEDIS Oficiales</p>
+                <strong>{{ cedis_oficiales|length }}</strong>
+            </div>
+        </div>
+
+        <div class="cedis-oficiales">
+            <h2>📋 CEDIS Oficiales (para copiar IDs)</h2>
+            <div class="cedis-list">
+                {% for cedis in cedis_oficiales %}
+                <div class="cedis-item">
+                    <span class="code">{{ cedis.code }} - {{ cedis.origin }}</span>
+                    <span class="id">ID: {{ cedis.id }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="info-card">
+            <strong>📌 Instrucciones:</strong> Para cada nombre en la tabla, selecciona el CEDIS oficial correspondiente. 
+            Los datos crudos se reescribirán con los códigos seleccionados. Usa los IDs mostrados arriba.
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="actions">
+                <a href="{% url 'upload_menu' %}" class="btn btn-secondary">← Volver</a>
+                <button type="submit" class="btn">✅ Aplicar Correcciones</button>
+            </div>
+
+            {% if nombres_unicos %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre en Datos Crudos</th>
+                        <th style="width: 150px;">En Planificación</th>
+                        <th style="width: 150px;">En Salidas</th>
+                        <th style="width: 350px;">CEDIS Oficial (seleccionar ID)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in nombres_unicos %}
+                    <tr>
+                        <td class="nombre-col">{{ item.nombre }}</td>
+                        <td>
+                            {% if item.planificacion > 0 %}
+                            <span class="count-badge">{{ item.planificacion }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.salida > 0 %}
+                            <span class="count-badge">{{ item.salida }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <input type="hidden" name="nombre_original_{{ forloop.counter }}" value="{{ item.nombre }}">
+                            <input type="text" class="search-input" id="search_{{ forloop.counter }}" placeholder="🔍 Buscar..." onkeyup="filterSelect({{ forloop.counter }})">
+                            <select name="codigo_{{ forloop.counter }}" id="select_{{ forloop.counter }}">
+                                <option value="">-- Seleccionar CEDIS oficial --</option>
+                                {% for cedis in cedis_oficiales %}
+                                <option value="{{ cedis.id }}">{{ cedis.id }} - {{ cedis.code }} ({{ cedis.origin }})</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-success">
+                ✅ No hay nombres pendientes de corrección. Todos los CEDIS están correctos.
+            </div>
+            {% endif %}
+        </form>
+    </div>
+    
+    <script>
+    function filterSelect(rowId) {
+        const searchInput = document.getElementById('search_' + rowId);
+        const select = document.getElementById('select_' + rowId);
+        const filter = searchInput.value.toLowerCase();
+        
+        // Mostrar todas las opciones primero
+        for (let i = 0; i < select.options.length; i++) {
+            const option = select.options[i];
+            const text = option.text.toLowerCase();
+            
+            if (text.includes(filter) || option.value === '') {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+        
+        // Si solo queda una opción visible (además del placeholder), seleccionarla
+        const visibleOptions = Array.from(select.options).filter(opt => opt.style.display !== 'none' && opt.value !== '');
+        if (visibleOptions.length === 1) {
+            select.value = visibleOptions[0].value;
+        }
+    }
+    </script>
+</body>
+</html>

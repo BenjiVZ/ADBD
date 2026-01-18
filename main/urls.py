@@ -17,6 +17,8 @@ from .views import (
     AdminSucursalesView,
     BibliotecaCedisView,
     BibliotecaSucursalesView,
+    CorreccionCedisView,
+    CorreccionSucursalesView,
 )
 
 urlpatterns = [
@@ -38,4 +40,7 @@ urlpatterns = [
     # Biblioteca - Investigación desde datos crudos
     path("biblioteca/cedis/", BibliotecaCedisView.as_view(), name="biblioteca_cedis"),
     path("biblioteca/sucursales/", BibliotecaSucursalesView.as_view(), name="biblioteca_sucursales"),
+    # Corrección de datos crudos
+    path("correccion/cedis/", CorreccionCedisView.as_view(), name="correccion_cedis"),
+    path("correccion/sucursales/", CorreccionSucursalesView.as_view(), name="correccion_sucursales"),
 ]

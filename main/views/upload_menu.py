@@ -22,5 +22,15 @@ class UploadMenuView(View):
                 "description": "Sube el Excel con la hoja de salidas (única hoja) y cárgala tras previsualizar.",
                 "url": "/salidas/",
             },
+            {
+                "name": "🔧 Corregir CEDIS",
+                "description": "Corrige nombres de CEDIS/Almacenes en datos crudos. Agrupa similares y asigna códigos oficiales.",
+                "url": "/correccion/cedis/",
+            },
+            {
+                "name": "🔧 Corregir Sucursales",
+                "description": "Corrige nombres de Sucursales en datos crudos. Agrupa similares y asigna BPL IDs oficiales.",
+                "url": "/correccion/sucursales/",
+            },
         ]
         return render(request, self.template_name, {"uploads": uploads})

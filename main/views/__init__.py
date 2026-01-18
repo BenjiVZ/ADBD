@@ -11,6 +11,8 @@ from .tablero_normalizado import TableroNormalizadoView
 from .error_resolver import PlanificacionErrorResolverView, SalidaErrorResolverView
 from .admin_maestros import AdminCedisView, AdminSucursalesView
 from .biblioteca_maestros import BibliotecaCedisView, BibliotecaSucursalesView
+from .correccion_cedis import CorreccionCedisView
+from .correccion_sucursales import CorreccionSucursalesView
 
 __all__ = [
 	"HomeView",
@@ -29,4 +31,6 @@ __all__ = [
 	"AdminSucursalesView",
 	"BibliotecaCedisView",
 	"BibliotecaSucursalesView",
+	"CorreccionCedisView",
+	"CorreccionSucursalesView",
 ]
