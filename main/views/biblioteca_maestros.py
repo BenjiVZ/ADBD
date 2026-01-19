@@ -34,8 +34,11 @@ class BibliotecaCedisView(View):
         # Unir todos los nombres encontrados
         todos_nombres = nombres_planificacion | nombres_salida
         
-        # Obtener CEDIS ya registrados (oficiales) - por nombre exacto
+        # Obtener CEDIS ya registrados (oficiales)
         cedis_oficiales = {c.origin: c for c in Cendis.objects.all()}
+        # También crear mapeo por ID y código para detectar IDs numéricos
+        cedis_por_id = {str(c.id): c for c in Cendis.objects.all()}
+        cedis_por_code = {c.code: c for c in Cendis.objects.all() if c.code}
         
         # Obtener mapeos existentes
         mapeos_existentes = {m.nombre_crudo: m for m in MapeoCedis.objects.select_related("cedis_oficial").all()}
@@ -43,8 +46,8 @@ class BibliotecaCedisView(View):
         # Clasificar: oficiales vs mapeados vs sin registrar
         nombres_info = []
         for nombre in sorted(todos_nombres):
+            # 1. Verificar si coincide por nombre exacto (origin)
             if nombre in cedis_oficiales:
-                # Coincide exactamente con un CEDIS oficial
                 nombres_info.append({
                     "nombre": nombre,
                     "estado": "oficial",
@@ -52,9 +55,33 @@ class BibliotecaCedisView(View):
                     "mapeo": None,
                     "en_planificacion": nombre in nombres_planificacion,
                     "en_salida": nombre in nombres_salida,
+                    "es_id": False,
                 })
+            # 2. Verificar si es un ID numérico que coincide con un CEDIS ID
+            elif nombre.strip().isdigit() and nombre.strip() in cedis_por_id:
+                cedis_encontrado = cedis_por_id[nombre.strip()]
+                nombres_info.append({
+                    "nombre": nombre,
+                    "estado": "oficial",
+                    "cedis": cedis_encontrado,
+                    "mapeo": None,
+                    "en_planificacion": nombre in nombres_planificacion,
+                    "en_salida": nombre in nombres_salida,
+                    "es_id": True,  # Marcar que se encontró por ID
+                })
+            # 3. Verificar si coincide por código
+            elif nombre in cedis_por_code:
+                nombres_info.append({
+                    "nombre": nombre,
+                    "estado": "oficial",
+                    "cedis": cedis_por_code[nombre],
+                    "mapeo": None,
+                    "en_planificacion": nombre in nombres_planificacion,
+                    "en_salida": nombre in nombres_salida,
+                    "es_id": False,
+                })
+            # 4. Verificar si ya tiene un mapeo guardado
             elif nombre in mapeos_existentes:
-                # Ya tiene un mapeo guardado
                 nombres_info.append({
                     "nombre": nombre,
                     "estado": "mapeado",
@@ -62,9 +89,10 @@ class BibliotecaCedisView(View):
                     "mapeo": mapeos_existentes[nombre],
                     "en_planificacion": nombre in nombres_planificacion,
                     "en_salida": nombre in nombres_salida,
+                    "es_id": False,
                 })
+            # 5. Sin registrar ni mapear
             else:
-                # Sin registrar ni mapear
                 nombres_info.append({
                     "nombre": nombre,
                     "estado": "sin_registrar",
@@ -72,6 +100,7 @@ class BibliotecaCedisView(View):
                     "mapeo": None,
                     "en_planificacion": nombre in nombres_planificacion,
                     "en_salida": nombre in nombres_salida,
+                    "es_id": nombre.strip().isdigit(),  # Marcar si parece un ID
                 })
         
         # Contar
@@ -177,8 +206,10 @@ class BibliotecaSucursalesView(View):
         # Unir todos los nombres encontrados
         todos_nombres = nombres_planificacion | nombres_salida_destino | nombres_salida_propuesto
         
-        # Obtener Sucursales ya registradas (oficiales) - por nombre exacto
+        # Obtener Sucursales ya registradas (oficiales)
         sucursales_oficiales = {s.name: s for s in Sucursal.objects.all()}
+        # También crear mapeo por BPL_ID para detectar IDs numéricos
+        sucursales_por_bpl_id = {str(s.bpl_id): s for s in Sucursal.objects.all()}
         
         # Obtener mapeos existentes
         mapeos_existentes = {m.nombre_crudo: m for m in MapeoSucursal.objects.select_related("sucursal_oficial").all()}
@@ -186,8 +217,8 @@ class BibliotecaSucursalesView(View):
         # Clasificar: oficiales vs mapeados vs sin registrar
         nombres_info = []
         for nombre in sorted(todos_nombres):
+            # 1. Verificar si coincide por nombre exacto
             if nombre in sucursales_oficiales:
-                # Coincide exactamente con una Sucursal oficial
                 nombres_info.append({
                     "nombre": nombre,
                     "estado": "oficial",
@@ -195,9 +226,22 @@ class BibliotecaSucursalesView(View):
                     "mapeo": None,
                     "en_planificacion": nombre in nombres_planificacion,
                     "en_salida": nombre in nombres_salida_destino or nombre in nombres_salida_propuesto,
+                    "es_id": False,
                 })
+            # 2. Verificar si es un ID numérico que coincide con un BPL_ID
+            elif nombre.strip().isdigit() and nombre.strip() in sucursales_por_bpl_id:
+                sucursal_encontrada = sucursales_por_bpl_id[nombre.strip()]
+                nombres_info.append({
+                    "nombre": nombre,
+                    "estado": "oficial",
+                    "sucursal": sucursal_encontrada,
+                    "mapeo": None,
+                    "en_planificacion": nombre in nombres_planificacion,
+                    "en_salida": nombre in nombres_salida_destino or nombre in nombres_salida_propuesto,
+                    "es_id": True,  # Marcar que se encontró por ID
+                })
+            # 3. Verificar si ya tiene un mapeo guardado
             elif nombre in mapeos_existentes:
-                # Ya tiene un mapeo guardado
                 nombres_info.append({
                     "nombre": nombre,
                     "estado": "mapeado",
@@ -205,9 +249,10 @@ class BibliotecaSucursalesView(View):
                     "mapeo": mapeos_existentes[nombre],
                     "en_planificacion": nombre in nombres_planificacion,
                     "en_salida": nombre in nombres_salida_destino or nombre in nombres_salida_propuesto,
+                    "es_id": False,
                 })
+            # 4. Sin registrar ni mapear
             else:
-                # Sin registrar ni mapear
                 nombres_info.append({
                     "nombre": nombre,
                     "estado": "sin_registrar",
@@ -215,6 +260,7 @@ class BibliotecaSucursalesView(View):
                     "mapeo": None,
                     "en_planificacion": nombre in nombres_planificacion,
                     "en_salida": nombre in nombres_salida_destino or nombre in nombres_salida_propuesto,
+                    "es_id": nombre.strip().isdigit(),  # Marcar si parece un ID
                 })
         
         # Contar

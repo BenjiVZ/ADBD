@@ -435,8 +435,16 @@
         <!-- Resumen Nacional -->
         <div class="nacional-summary">
             <div class="summary-card">
+                <div class="summary-label">Total Planificaciones</div>
+                <div class="summary-value">{{ nacional.total_plan_registros|floatformat:0|default:"0" }}</div>
+            </div>
+            <div class="summary-card">
                 <div class="summary-label">Unid. Planificadas</div>
                 <div class="summary-value">{{ nacional.plan_qty|floatformat:0|default:"0" }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Total Salidas</div>
+                <div class="summary-value">{{ nacional.total_salida_registros|floatformat:0|default:"0" }}</div>
             </div>
             <div class="summary-card">
                 <div class="summary-label">Unid. Plan. Despachadas</div>

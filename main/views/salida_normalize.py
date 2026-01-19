@@ -124,14 +124,28 @@ class SalidaNormalizeView(View):
         
         products_map = {p.code.lower(): p for p in products}
         
-        # Mapeos: nombre_crudo -> entidad_oficial
-        mapeos_cedis_dict = {m.nombre_crudo.lower(): m.cedis_oficial for m in mapeos_cedis}
-        mapeos_sucursales_dict = {m.nombre_crudo.lower(): m.sucursal_oficial for m in mapeos_sucursales}
+        # Mapeos: nombre_crudo -> entidad_oficial (ahora también por ID)
+        mapeos_cedis_dict = {}
+        for m in mapeos_cedis:
+            # Por nombre crudo
+            mapeos_cedis_dict[m.nombre_crudo.lower()] = m.cedis_oficial
+            # También mapear por ID del CEDIS oficial para buscar por ID
+            mapeos_cedis_dict[str(m.cedis_oficial.id).lower()] = m.cedis_oficial
+            # Y por código si existe
+            if m.cedis_oficial.code:
+                mapeos_cedis_dict[m.cedis_oficial.code.lower()] = m.cedis_oficial
+        
+        mapeos_sucursales_dict = {}
+        for m in mapeos_sucursales:
+            # Por nombre crudo
+            mapeos_sucursales_dict[m.nombre_crudo.lower()] = m.sucursal_oficial
+            # También mapear por BPL_ID de la sucursal oficial
+            mapeos_sucursales_dict[str(m.sucursal_oficial.bpl_id).lower()] = m.sucursal_oficial
         
         print(f"\n📋 CENDIS disponibles: {list(cendis_map.keys())}")
         print(f"📋 Sucursales disponibles (primeras 10): {list(sucursales_map.keys())[:10]}")
-        print(f"🔗 Mapeos CEDIS: {list(mapeos_cedis_dict.keys())}")
-        print(f"🔗 Mapeos Sucursales (primeras 10): {list(mapeos_sucursales_dict.keys())[:10]}")
+        print(f"🔗 Mapeos CEDIS (incluye nombres e IDs): {len(mapeos_cedis_dict)} entradas")
+        print(f"🔗 Mapeos Sucursales (incluye nombres e IDs): {len(mapeos_sucursales_dict)} entradas")
         
         # Obtener registros normalizados existentes de una vez
         existing_normalized = {
@@ -167,9 +181,9 @@ class SalidaNormalizeView(View):
                 cedis_origen = None
                 if raw.nombre_almacen_origen:
                     origen_key = raw.nombre_almacen_origen.strip().lower()
-                    # 1. Buscar nombre exacto en CEDIS
+                    # 1. Buscar directamente en CEDIS (por nombre, ID o código)
                     cedis_origen = cendis_map.get(origen_key)
-                    # 2. Si no existe, buscar en mapeos de CEDIS
+                    # 2. Si no existe, buscar en mapeos de CEDIS (ahora incluye IDs)
                     if not cedis_origen:
                         cedis_origen = mapeos_cedis_dict.get(origen_key)
                     
@@ -196,9 +210,9 @@ class SalidaNormalizeView(View):
                 destino_nombre = raw.nombre_sucursal_destino or raw.sucursal_destino_propuesto
                 if destino_nombre:
                     destino_key = destino_nombre.strip().lower()
-                    # 1. Buscar nombre exacto en Sucursales
+                    # 1. Buscar directamente en Sucursales (por nombre o BPL_ID)
                     sucursal_destino = sucursales_map.get(destino_key)
-                    # 2. Si no existe, buscar en mapeos de Sucursales
+                    # 2. Si no existe, buscar en mapeos de Sucursales (ahora incluye IDs)
                     if not sucursal_destino:
                         sucursal_destino = mapeos_sucursales_dict.get(destino_key)
                     

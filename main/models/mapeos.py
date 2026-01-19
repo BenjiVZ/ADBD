@@ -1,16 +1,29 @@
 """
 Modelos para guardar mapeos/alias de CEDIS y Sucursales.
 Estos mapeos NO modifican los datos crudos originales.
+
+El sistema de normalización busca coincidencias en este orden:
+1. Búsqueda directa por nombre, ID o código en maestros
+2. Búsqueda en mapeos por nombre_crudo (puede ser nombre o ID)
+3. El mapeo automáticamente incluye el ID del registro oficial mapeado
 """
 from django.db import models
 
 
 class MapeoCedis(models.Model):
     """
-    Guarda la relación entre un nombre crudo y un CEDIS oficial.
-    Ejemplo: "Guatire I" -> Cendis(origin="Guatire 1")
+    Guarda la relación entre un nombre/ID crudo y un CEDIS oficial.
+    Ejemplos:
+    - "Guatire I" -> Cendis(origin="Guatire 1")
+    - "123" -> Cendis(id=5)
+    - "VALENCIA" -> Cendis(code="VAL")
+    
+    Durante la normalización, el sistema busca por:
+    - nombre_crudo (puede contener nombre o ID)
+    - ID del CEDIS oficial (automático)
+    - código del CEDIS oficial (automático)
     """
-    nombre_crudo = models.CharField(max_length=255, unique=True, help_text="Nombre tal como aparece en los Excel")
+    nombre_crudo = models.CharField(max_length=255, unique=True, help_text="Nombre o ID tal como aparece en los Excel")
     cedis_oficial = models.ForeignKey(
         "main.Cendis", 
         on_delete=models.CASCADE, 
@@ -30,10 +43,17 @@ class MapeoCedis(models.Model):
 
 class MapeoSucursal(models.Model):
     """
-    Guarda la relación entre un nombre crudo y una Sucursal oficial.
-    Ejemplo: "SAMBIL VALENCIA" -> Sucursal(name="Sambil Valencia")
+    Guarda la relación entre un nombre/ID crudo y una Sucursal oficial.
+    Ejemplos:
+    - "SAMBIL VALENCIA" -> Sucursal(name="Sambil Valencia")
+    - "25" -> Sucursal(bpl_id=25)
+    - "SUC-025" -> Sucursal(bpl_id=25)
+    
+    Durante la normalización, el sistema busca por:
+    - nombre_crudo (puede contener nombre o ID)
+    - BPL_ID de la sucursal oficial (automático)
     """
-    nombre_crudo = models.CharField(max_length=255, unique=True, help_text="Nombre tal como aparece en los Excel")
+    nombre_crudo = models.CharField(max_length=255, unique=True, help_text="Nombre o ID tal como aparece en los Excel")
     sucursal_oficial = models.ForeignKey(
         "main.Sucursal", 
         on_delete=models.CASCADE, 

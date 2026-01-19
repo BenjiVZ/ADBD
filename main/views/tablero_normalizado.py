@@ -37,8 +37,8 @@ class TableroNormalizadoView(View):
         resumen_cedis = self._build_resumen_cedis(plan_date, salida_date, pvp_map)
         resumen_tiendas = self._build_resumen_tiendas(plan_date, salida_date, pvp_map)
         
-        # Totales nacionales
-        nacional = self._calculate_nacional(resumen_tiendas)
+        # Totales nacionales con conteo de registros
+        nacional = self._calculate_nacional(resumen_tiendas, plan_date, salida_date)
         
         # Export CSV
         export = request.GET.get("export")
@@ -584,8 +584,8 @@ class TableroNormalizadoView(View):
         
         return result
 
-    def _calculate_nacional(self, resumen_tiendas):
-        """Calcula totales nacionales"""
+    def _calculate_nacional(self, resumen_tiendas, plan_date, salida_date):
+        """Calcula totales nacionales incluyendo conteo de registros"""
         total = {
             "plan_qty": Decimal("0"),
             "plan_usd": Decimal("0"),
@@ -595,6 +595,8 @@ class TableroNormalizadoView(View):
             "salida_noplan_usd": Decimal("0"),
             "total_salida_qty": Decimal("0"),
             "total_salida_usd": Decimal("0"),
+            "total_plan_registros": 0,
+            "total_salida_registros": 0,
         }
         
         for tienda in resumen_tiendas:
@@ -609,6 +611,12 @@ class TableroNormalizadoView(View):
         
         total["percent_qty"] = self._calc_percent(total["salida_plan_qty"], total["plan_qty"])
         total["percent_usd"] = self._calc_percent(total["salida_plan_usd"], total["plan_usd"])
+        
+        # Contar registros totales de planificación y salida
+        if plan_date:
+            total["total_plan_registros"] = PlanificacionNormalizada.objects.filter(plan_month=plan_date).count()
+        if salida_date:
+            total["total_salida_registros"] = SalidaNormalizada.objects.filter(fecha_salida=salida_date).count()
         
         return total
 
