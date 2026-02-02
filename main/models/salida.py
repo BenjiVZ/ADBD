@@ -18,7 +18,12 @@ class Salida(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     normalize_status = models.CharField(
         max_length=20,
-        choices=[("pending", "Pendiente"), ("ok", "Normalizado"), ("error", "Error")],
+        choices=[
+            ("pending", "Pendiente"), 
+            ("ok", "Normalizado"), 
+            ("error", "Error"),
+            ("ignored", "Ignorado"),
+        ],
         default="pending",
     )
     normalize_notes = models.TextField(blank=True, default="")

@@ -1,22 +1,31 @@
 <!DOCTYPE html>
+{% load humanize number_format %}
 <html lang="es">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tablero Normalizado - Análisis de Cumplimiento</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: #ffffff;
             color: #2c2c2c;
             line-height: 1.6;
         }
+
         .container {
             max-width: 1600px;
             margin: 0 auto;
             padding: 0 24px 48px 24px;
         }
+
         header {
             background: #ffffff;
             border-bottom: 2px solid #dc0000;
@@ -27,55 +36,64 @@
             top: 0;
             z-index: 100;
         }
-        h1 { 
+
+        h1 {
             font-size: 36px;
             font-weight: 300;
             color: #dc0000;
             margin-bottom: 24px;
             letter-spacing: -0.5px;
         }
-        .nav { 
-            display: flex; 
+
+        .nav {
+            display: flex;
             gap: 32px;
             align-items: center;
             flex-wrap: wrap;
         }
-        .nav a { 
+
+        .nav a {
             color: #2c2c2c;
-            text-decoration: none; 
+            text-decoration: none;
             font-weight: 500;
             font-size: 15px;
             padding: 8px 0;
             border-bottom: 2px solid transparent;
             transition: all 0.3s ease;
         }
-        .nav a:hover { 
+
+        .nav a:hover {
             color: #dc0000;
             border-bottom-color: #dc0000;
         }
-        .card { 
+
+        .card {
             background: #ffffff;
             border: 1px solid #e8e8e8;
             border-radius: 8px;
             padding: 24px;
             margin-bottom: 24px;
         }
+
         .filters {
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
             align-items: flex-end;
         }
+
         .filter-group {
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
+
         .filter-group label {
             font-weight: 500;
             color: #2c2c2c;
             font-size: 13px;
         }
+
         .filter-group select {
             padding: 10px 14px;
             border: 1px solid #e8e8e8;
@@ -83,10 +101,12 @@
             font-size: 14px;
             min-width: 200px;
         }
+
         .filter-group select:focus {
             outline: none;
             border-color: #dc0000;
         }
+
         .btn {
             padding: 10px 20px;
             border: none;
@@ -96,21 +116,25 @@
             font-size: 14px;
             transition: all 0.3s ease;
         }
+
         .btn-primary {
             background: #dc0000;
             color: white;
         }
+
         .btn-primary:hover {
             background: #b80000;
         }
+
         .btn-secondary {
             background: #2c2c2c;
             color: white;
         }
+
         .btn-secondary:hover {
             background: #1a1a1a;
         }
-        
+
         /* Tabs */
         .tabs {
             display: flex;
@@ -118,6 +142,7 @@
             border-bottom: 2px solid #e8e8e8;
             margin-bottom: 24px;
         }
+
         .tab {
             padding: 14px 28px;
             cursor: pointer;
@@ -129,12 +154,15 @@
             position: relative;
             transition: all 0.3s ease;
         }
+
         .tab:hover {
             color: #dc0000;
         }
+
         .tab.active {
             color: #dc0000;
         }
+
         .tab.active::after {
             content: '';
             position: absolute;
@@ -144,13 +172,15 @@
             height: 2px;
             background: #dc0000;
         }
+
         .tab-content {
             display: none;
         }
+
         .tab-content.active {
             display: block;
         }
-        
+
         /* Nacional Summary */
         .nacional-summary {
             display: grid;
@@ -158,6 +188,7 @@
             gap: 16px;
             margin-bottom: 24px;
         }
+
         .summary-card {
             background: #fafafa;
             padding: 20px;
@@ -165,71 +196,84 @@
             text-align: center;
             border: 1px solid #e8e8e8;
         }
+
         .summary-card.highlight {
             background: #fff5f5;
             border-color: #dc0000;
         }
+
         .summary-label {
             font-size: 12px;
             color: #5a5a5a;
             margin-bottom: 6px;
             font-weight: 500;
         }
+
         .summary-value {
             font-size: 24px;
             font-weight: 400;
             color: #2c2c2c;
         }
+
         .summary-value.percent {
             color: #dc0000;
             font-weight: 600;
         }
-        
+
         /* Tables */
-        table { 
-            border-collapse: collapse; 
-            width: 100%; 
+        table {
+            border-collapse: collapse;
+            width: 100%;
             background: white;
             border: 1px solid #e8e8e8;
             border-radius: 8px;
             overflow: hidden;
             font-size: 13px;
         }
-        th, td { 
+
+        th,
+        td {
             padding: 10px 12px;
         }
-        th { 
+
+        th {
             background: #fafafa;
-            text-align: center; 
+            text-align: center;
             font-weight: 600;
             color: #2c2c2c;
             border-bottom: 2px solid #e8e8e8;
             font-size: 12px;
             white-space: nowrap;
         }
+
         th.group-header {
             background: #dc0000;
             color: white;
         }
+
         td {
             text-align: right;
             border-bottom: 1px solid #f0f0f0;
         }
+
         td:first-child {
             text-align: left;
             font-weight: 500;
         }
+
         tr:hover {
             background: #fafafa;
         }
+
         .total-row {
             background: #f5f5f5 !important;
             font-weight: 600;
         }
+
         .total-row td {
             border-top: 2px solid #e8e8e8;
         }
-        
+
         /* Cumplimiento hierarchy */
         .cedis-block {
             background: #fff;
@@ -238,6 +282,7 @@
             margin-bottom: 16px;
             overflow: hidden;
         }
+
         .cedis-header {
             background: #dc0000;
             color: white;
@@ -249,21 +294,26 @@
             align-items: center;
             cursor: pointer;
         }
+
         .cedis-header .percent {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             padding: 4px 12px;
             border-radius: 4px;
             font-size: 14px;
         }
+
         .cedis-content {
             padding: 0;
         }
+
         .tipo-block {
             border-bottom: 1px solid #e8e8e8;
         }
+
         .tipo-block:last-child {
             border-bottom: none;
         }
+
         .tipo-header {
             background: #f5f5f5;
             padding: 12px 20px;
@@ -274,19 +324,24 @@
             cursor: pointer;
             font-size: 14px;
         }
+
         .tipo-header:hover {
             background: #eee;
         }
+
         .tipo-header .percent {
             color: #dc0000;
             font-weight: 700;
         }
+
         .categoria-block {
             border-bottom: 1px solid #f0f0f0;
         }
+
         .categoria-block:last-child {
             border-bottom: none;
         }
+
         .categoria-header {
             background: #fafafa;
             padding: 10px 20px 10px 40px;
@@ -297,92 +352,120 @@
             cursor: pointer;
             font-size: 13px;
         }
+
         .categoria-header:hover {
             background: #f5f5f5;
         }
+
         .categoria-header .percent {
             color: #dc0000;
             font-weight: 600;
         }
+
         .producto-table {
             width: 100%;
             border-collapse: collapse;
         }
+
         .producto-table th {
             background: #f5f5f5;
             padding: 8px 20px 8px 60px;
             font-size: 11px;
             text-transform: uppercase;
         }
+
         .producto-table td {
             padding: 6px 20px 6px 60px;
             border-bottom: 1px solid #fafafa;
             font-size: 12px;
         }
+
         .producto-table td:first-child {
             font-weight: 400;
         }
+
         .producto-table tr:last-child td {
             border-bottom: none;
         }
+
         .producto-table tr:hover {
             background: #f9f9f9;
         }
+
         .grupo-table {
             width: 100%;
             border-collapse: collapse;
         }
+
         .grupo-table th {
             background: #fafafa;
             padding: 8px 20px;
             font-size: 11px;
             text-transform: uppercase;
         }
+
         .grupo-table td {
             padding: 8px 20px;
             border-bottom: 1px solid #f0f0f0;
         }
+
         .grupo-table tr:last-child td {
             border-bottom: none;
         }
-        
+
         /* Colors for percent values */
-        .percent-high { color: #2e7d32; }
-        .percent-medium { color: #f57f17; }
-        .percent-low { color: #c62828; }
-        
+        .percent-high {
+            color: #2e7d32;
+        }
+
+        .percent-medium {
+            color: #f57f17;
+        }
+
+        .percent-low {
+            color: #c62828;
+        }
+
         .no-data {
             text-align: center;
             padding: 48px 24px;
             color: #999;
         }
-        .usd { color: #666; font-style: italic; }
-        
+
+        .usd {
+            color: #666;
+            font-style: italic;
+        }
+
         /* Animaciones */
         @keyframes fire {
-            0%, 100% { 
+
+            0%,
+            100% {
                 text-shadow: 0 0 5px #ff6600, 0 0 10px #ff6600, 0 0 15px #ff6600;
             }
-            50% { 
+
+            50% {
                 text-shadow: 0 0 10px #ff9900, 0 0 20px #ff9900, 0 0 30px #ff6600;
             }
         }
-        
+
         .fire-effect {
             animation: fire 1.5s ease-in-out infinite;
         }
-        
+
         .ranking-badge {
             display: inline-block;
             margin-right: 8px;
             margin-right: 8px;
         }
-        
+
         .cedis-header.top-performer {
             background: linear-gradient(135deg, #dc0000 0%, #ff4444 100%);
         }
     </style>
 </head>
+
 <body>
     <header>
         <div class="container">
@@ -408,9 +491,9 @@
                         <select id="plan_date" name="plan_date">
                             <option value="">Seleccione...</option>
                             {% for date in plan_dates %}
-                                <option value="{{ date|date:'Y-m-d' }}" {% if plan_date == date %}selected{% endif %}>
-                                    {{ date|date:'d/m/Y' }}
-                                </option>
+                            <option value="{{ date|date:'Y-m-d' }}" {% if salida_date == date %}selected{% endif %}>
+                                {{ date|date:'d/m/Y' }}
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -419,9 +502,9 @@
                         <select id="salida_date" name="salida_date">
                             <option value="">Seleccione...</option>
                             {% for date in salida_dates %}
-                                <option value="{{ date|date:'Y-m-d' }}" {% if salida_date == date %}selected{% endif %}>
-                                    {{ date|date:'d/m/Y' }}
-                                </option>
+                            <option value="{{ date|date:'Y-m-d' }}" {% if salida_date == date %}selected{% endif %}>
+                                {{ date|date:'d/m/Y' }}
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -431,46 +514,62 @@
         </div>
 
         {% if plan_date and salida_date %}
-        
-        <!-- Resumen Nacional -->
+
+        <!-- Resumen Nacional - Línea 1: Unidades -->
         <div class="nacional-summary">
             <div class="summary-card">
-                <div class="summary-label">Total Planificaciones</div>
-                <div class="summary-value">{{ nacional.total_plan_registros|floatformat:0|default:"0" }}</div>
+                <div class="summary-label">📦 Unidades Planificadas</div>
+                <div class="summary-value">{{ nacional.plan_qty|miles }}</div>
             </div>
             <div class="summary-card">
-                <div class="summary-label">Unid. Planificadas</div>
-                <div class="summary-value">{{ nacional.plan_qty|floatformat:0|default:"0" }}</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Total Salidas</div>
-                <div class="summary-value">{{ nacional.total_salida_registros|floatformat:0|default:"0" }}</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Unid. Plan. Despachadas</div>
-                <div class="summary-value">{{ nacional.salida_plan_qty|floatformat:0|default:"0" }}</div>
+                <div class="summary-label">🚚 Unidades Despachadas</div>
+                <div class="summary-value">{{ nacional.salida_plan_qty|miles }}</div>
             </div>
             <div class="summary-card highlight">
-                <div class="summary-label">% Cumplimiento</div>
+                <div class="summary-label">📊 % Cumplimiento Unidades</div>
                 <div class="summary-value percent">{{ nacional.percent_qty|floatformat:1|default:"0" }}%</div>
             </div>
             <div class="summary-card">
-                <div class="summary-label">Unid. NO Plan. Despachadas</div>
-                <div class="summary-value">{{ nacional.salida_noplan_qty|floatformat:0|default:"0" }}</div>
+                <div class="summary-label">⚠️ Unid. NO Plan. Despachadas</div>
+                <div class="summary-value">{{ nacional.salida_noplan_qty|miles }}</div>
             </div>
             <div class="summary-card">
-                <div class="summary-label">Total Unid. Despachadas</div>
-                <div class="summary-value">{{ nacional.total_salida_qty|floatformat:0|default:"0" }}</div>
+                <div class="summary-label">📋 Total Unid. Despachadas</div>
+                <div class="summary-value">{{ nacional.total_salida_qty|miles }}</div>
+            </div>
+        </div>
+
+        <!-- Resumen Nacional - Línea 2: Tiendas -->
+        <div class="nacional-summary">
+            <div class="summary-card">
+                <div class="summary-label">🏪 Tiendas Planificadas</div>
+                <div class="summary-value">{{ nacional.tiendas_planificadas|miles }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">✅ Tiendas Despachadas</div>
+                <div class="summary-value">{{ nacional.tiendas_despachadas|miles }}</div>
+            </div>
+            <div class="summary-card highlight">
+                <div class="summary-label">📊 % Cumplimiento Tiendas</div>
+                <div class="summary-value percent">{{ nacional.percent_tiendas|floatformat:1|default:"0" }}%</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">⚠️ Tiendas NO Plan. Despachadas</div>
+                <div class="summary-value">{{ nacional.tiendas_noplan_despachadas|miles }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">📋 Total Tiendas Despachadas</div>
+                <div class="summary-value">{{ nacional.total_tiendas_despachadas|miles }}</div>
             </div>
         </div>
 
         <!-- Pestañas -->
         <div class="tabs">
             <button class="tab {% if active_tab == 'cumplimiento' %}active{% endif %}" data-tab="cumplimiento">
-                📊 Resumen por CEDIS
+                📊 Resumen por CENDIS
             </button>
             <button class="tab {% if active_tab == 'cedis' %}active{% endif %}" data-tab="cedis">
-                🏭 Tabla Resumen por CEDIS
+                🏭 Tabla Resumen por CENDIS
             </button>
             <button class="tab {% if active_tab == 'tiendas' %}active{% endif %}" data-tab="tiendas">
                 🏪 Resumen por Tienda
@@ -480,250 +579,387 @@
         <!-- Tab 1: Resumen por CEDIS -->
         <div id="tab-cumplimiento" class="tab-content {% if active_tab == 'cumplimiento' %}active{% endif %}">
             {% if resumen_cumplimiento %}
-                <div style="margin-bottom: 16px; text-align: right;">
-                    <a href="?plan_date={{ plan_date|date:'Y-m-d' }}&salida_date={{ salida_date|date:'Y-m-d' }}&export=cumplimiento" class="btn btn-secondary">
-                        📥 Descargar CSV
-                    </a>
+            <div style="margin-bottom: 16px; text-align: right;">
+                <a href="?plan_date={{ plan_date|date:'Y-m-d' }}&salida_date={{ salida_date|date:'Y-m-d' }}&export=cumplimiento"
+                    class="btn btn-secondary">
+                    📥 Descargar CSV
+                </a>
+            </div>
+
+            {% for cedis in resumen_cumplimiento %}
+            <div class="cedis-block">
+                <div class="cedis-header {% if forloop.counter == 1 %}fire-effect{% endif %}"
+                    onclick="toggleCedis(this)">
+                    <span>
+                        {% if cedis.percent >= 80 %}
+                        {% if forloop.counter == 1 %}
+                        <span class="ranking-badge">⭐⭐⭐</span>
+                        {% elif forloop.counter == 2 %}
+                        <span class="ranking-badge">⭐⭐</span>
+                        {% elif forloop.counter == 3 %}
+                        <span class="ranking-badge">⭐</span>
+                        {% endif %}
+                        {% endif %}
+                    </span>
+                    <span>🏭 {{ cedis.name }}</span>
+                    <span>{{ cedis.percent|floatformat:1 }}% | Plan: {{ cedis.plan|floatformat:0 }} | Despachado: {{ cedis.salida|floatformat:0 }}</span>
                 </div>
-                
-                {% for cedis in resumen_cumplimiento %}
-                <div class="cedis-block">
-                    <div class="cedis-header {% if forloop.counter == 1 %}fire-effect{% endif %}" onclick="toggleCedis(this)">
-                        <span>
-                            {% if cedis.percent >= 80 %}
-                                {% if forloop.counter == 1 %}
-                                    <span class="ranking-badge">⭐⭐⭐</span>
-                                {% elif forloop.counter == 2 %}
-                                    <span class="ranking-badge">⭐⭐</span>
-                                {% elif forloop.counter == 3 %}
-                                    <span class="ranking-badge">⭐</span>
-                                {% endif %}
-                            {% endif %}
-                        </span>
-                        <span>🏭 {{ cedis.name }}</span>
-                        <span>{{ cedis.percent|floatformat:1 }}% | Plan: {{ cedis.plan|floatformat:0 }} | Despachado: {{ cedis.salida|floatformat:0 }}</span>
-                    </div>
-                    <div class="cedis-content" style="display: none;">
-                        {% for tipo in cedis.tipos %}
-                        <div class="tipo-block">
-                            <div class="tipo-header" onclick="toggleTipo(this)">
-                                <span>📦 {{ tipo.name }}</span>
-                                <span class="percent">
-                                    {{ tipo.salida|floatformat:0 }} / {{ tipo.plan|floatformat:0 }} = {{ tipo.percent|floatformat:1 }}%
-                                </span>
-                            </div>
-                            <div style="display: none;">
-                                {% for categoria in tipo.categorias %}
-                                <div class="categoria-block">
-                                    <div class="categoria-header" onclick="toggleCategoria(this)">
-                                        <span>📂 {{ categoria.name }}</span>
-                                        <span class="percent">
-                                            {{ categoria.salida|floatformat:0 }} / {{ categoria.plan|floatformat:0 }} = {{ categoria.percent|floatformat:1 }}%
-                                        </span>
-                                    </div>
-                                    <table class="producto-table" style="display: none;">
-                                        <thead>
-                                            <tr>
-                                                <th style="text-align: left;">Producto</th>
-                                                <th>Planificado</th>
-                                                <th>Despachado</th>
-                                                <th>% Cumplimiento</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for producto in categoria.productos %}
-                                            <tr>
-                                                <td>{{ producto.name }}</td>
-                                                <td>{{ producto.plan|floatformat:0 }}</td>
-                                                <td>{{ producto.salida|floatformat:0 }}</td>
-                                                <td class="{% if producto.percent >= 80 %}percent-high{% elif producto.percent >= 50 %}percent-medium{% else %}percent-low{% endif %}">
-                                                    {{ producto.percent|floatformat:1 }}%
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+                <div class="cedis-content" style="display: none;">
+                    {% for tipo in cedis.tipos %}
+                    <div class="tipo-block">
+                        <div class="tipo-header" onclick="toggleTipo(this)">
+                            <span>📦 {{ tipo.name }}</span>
+                            <span class="percent">
+                                {{ tipo.salida|floatformat:0 }} / {{ tipo.plan|floatformat:0 }} = {{ tipo.percent|floatformat:1 }}%
+                            </span>
+                        </div>
+                        <div style="display: none;">
+                            {% for grupo in tipo.grupos %}
+                            <div class="tipo-block">
+                                <div class="tipo-header" onclick="toggleTipo(this)">
+                                    <span>🏷️ {{ grupo.name }}</span>
+                                    <span class="percent">
+                                        {{ grupo.salida|floatformat:0 }} / {{ grupo.plan|floatformat:0 }} = {{ grupo.percent|floatformat:1 }}%
+                                    </span>
                                 </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="no-data">
-                    <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
-                    <p>No hay datos de cumplimiento disponibles.</p>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- Tab 2: Tabla Resumen por CEDIS -->
-        <div id="tab-cedis" class="tab-content {% if active_tab == 'cedis' %}active{% endif %}">
-            {% if resumen_cedis %}
-                <div style="margin-bottom: 16px; text-align: right;">
-                    <a href="?plan_date={{ plan_date|date:'Y-m-d' }}&salida_date={{ salida_date|date:'Y-m-d' }}&export=cedis" class="btn btn-secondary">
-                        📥 Descargar CSV
-                    </a>
-                </div>
-                <div class="card" style="padding: 0; overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th rowspan="2" style="text-align: left; vertical-align: middle;">CENDIS</th>
-                                <th colspan="2" class="group-header">Planificado</th>
-                                <th colspan="4" class="group-header">Planificado Despachado</th>
-                                <th colspan="2" class="group-header">NO Planificado</th>
-                                <th colspan="2" class="group-header">Total Despachado</th>
-                            </tr>
-                            <tr>
-                                <th>Unidades</th>
-                                <th>USD</th>
-                                <th>Unidades</th>
-                                <th>USD</th>
-                                <th>% Unid.</th>
-                                <th>% USD</th>
-                                <th>Unidades</th>
-                                <th>USD</th>
-                                <th>Unidades</th>
-                                <th>USD</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in resumen_cedis %}
-                            <tr>
-                                <td>{{ row.name }}</td>
-                                <td>{{ row.plan_qty|floatformat:0 }}</td>
-                                <td class="usd">${{ row.plan_usd|floatformat:2 }}</td>
-                                <td>{{ row.salida_plan_qty|floatformat:0 }}</td>
-                                <td class="usd">${{ row.salida_plan_usd|floatformat:2 }}</td>
-                                <td class="{% if row.percent_qty >= 80 %}percent-high{% elif row.percent_qty >= 50 %}percent-medium{% else %}percent-low{% endif %}">
-                                    {{ row.percent_qty|floatformat:1 }}%
-                                </td>
-                                <td class="{% if row.percent_usd >= 80 %}percent-high{% elif row.percent_usd >= 50 %}percent-medium{% else %}percent-low{% endif %}">
-                                    {{ row.percent_usd|floatformat:1 }}%
-                                </td>
-                                <td>{{ row.salida_noplan_qty|floatformat:0 }}</td>
-                                <td class="usd">${{ row.salida_noplan_usd|floatformat:2 }}</td>
-                                <td><strong>{{ row.total_salida_qty|floatformat:0 }}</strong></td>
-                                <td class="usd"><strong>${{ row.total_salida_usd|floatformat:2 }}</strong></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                        <tfoot>
-                            <tr class="total-row">
-                                <td><strong>TOTAL NACIONAL</strong></td>
-                                <td>{{ nacional.plan_qty|floatformat:0 }}</td>
-                                <td class="usd">${{ nacional.plan_usd|floatformat:2 }}</td>
-                                <td>{{ nacional.salida_plan_qty|floatformat:0 }}</td>
-                                <td class="usd">${{ nacional.salida_plan_usd|floatformat:2 }}</td>
-                                <td class="{% if nacional.percent_qty >= 80 %}percent-high{% elif nacional.percent_qty >= 50 %}percent-medium{% else %}percent-low{% endif %}">
-                                    {{ nacional.percent_qty|floatformat:1 }}%
-                                </td>
-                                <td class="{% if nacional.percent_usd >= 80 %}percent-high{% elif nacional.percent_usd >= 50 %}percent-medium{% else %}percent-low{% endif %}">
-                                    {{ nacional.percent_usd|floatformat:1 }}%
-                                </td>
-                                <td>{{ nacional.salida_noplan_qty|floatformat:0 }}</td>
-                                <td class="usd">${{ nacional.salida_noplan_usd|floatformat:2 }}</td>
-                                <td><strong>{{ nacional.total_salida_qty|floatformat:0 }}</strong></td>
-                                <td class="usd"><strong>${{ nacional.total_salida_usd|floatformat:2 }}</strong></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            {% else %}
-                <div class="no-data">
-                    <div style="font-size: 48px; margin-bottom: 16px;">🏭</div>
-                    <p>No hay datos por CEDIS disponibles.</p>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- Tab 3: Resumen por Tienda -->
-        <div id="tab-tiendas" class="tab-content {% if active_tab == 'tiendas' %}active{% endif %}">
-            {% if resumen_tiendas %}
-                <div style="margin-bottom: 16px; text-align: right;">
-                    <a href="?plan_date={{ plan_date|date:'Y-m-d' }}&salida_date={{ salida_date|date:'Y-m-d' }}&export=tiendas" class="btn btn-secondary">
-                        📥 Descargar CSV
-                    </a>
-                </div>
-                
-                {% for tienda in resumen_tiendas %}
-                <div class="cedis-block">
-                    <div class="cedis-header" onclick="toggleCedis(this)">
-                        <div>
-                            🏪 {{ tienda.name }}
-                        </div>
-                        <div>
-                            <span class="percent">{{ tienda.percent_qty|floatformat:1 }}% Cumplimiento</span>
-                            <span style="margin-left: 20px;">Planif: {{ tienda.plan_qty|floatformat:0 }} unid. / ${{ tienda.plan_usd|floatformat:2 }}</span>
-                            <span style="margin-left: 20px;">Despachado: {{ tienda.total_salida_qty|floatformat:0 }} unid. / ${{ tienda.total_salida_usd|floatformat:2 }}</span>
-                        </div>
-                    </div>
-                    <div class="cedis-content" style="display: none;">
-                        {% for prioridad in tienda.prioridades %}
-                        <div class="tipo-block">
-                            <div class="tipo-header" onclick="toggleTipo(this)">
-                                <span>📋 {{ prioridad.name }}</span>
-                                <span class="percent">
-                                    {{ prioridad.salida_plan_qty|floatformat:0 }} / {{ prioridad.plan_qty|floatformat:0 }} = {{ prioridad.percent_qty|floatformat:1 }}%
-                                </span>
-                            </div>
-                            <div style="display: none;">
-                                {% for tipo in prioridad.tipos %}
-                                <div class="categoria-block">
-                                    <div class="categoria-header" onclick="toggleCategoria(this)">
-                                        <span>📦 {{ tipo.name }}</span>
-                                        <span class="percent">
-                                            {{ tipo.salida_plan_qty|floatformat:0 }} / {{ tipo.plan_qty|floatformat:0 }} = {{ tipo.percent_qty|floatformat:1 }}%
-                                        </span>
-                                    </div>
-                                    <div style="display: none;">
-                                        <table class="producto-table">
+                                <div style="display: none;">
+                                    {% for categoria in grupo.categorias %}
+                                    <div class="categoria-block">
+                                        <div class="categoria-header" onclick="toggleCategoria(this)">
+                                            <span>📂 {{ categoria.name }}</span>
+                                            <span class="percent">
+                                                {{ categoria.salida|floatformat:0 }} / {{ categoria.plan|floatformat:0 }} = {{ categoria.percent|floatformat:1 }}%
+                                            </span>
+                                        </div>
+                                        <table class="producto-table" style="display: none;">
                                             <thead>
                                                 <tr>
-                                                    <th style="text-align: left;">Producto</th>
-                                                    <th>Plan Unid.</th>
-                                                    <th>Plan USD</th>
-                                                    <th>Desp. Unid.</th>
-                                                    <th>Desp. USD</th>
-                                                    <th>% Unid.</th>
-                                                    <th>% USD</th>
+                                                    <th style="text-align: left;">Código</th>
+                                                    <th style="text-align: left;">Nombre</th>
+                                                    <th>Planificado</th>
+                                                    <th>Despachado</th>
+                                                    <th>% Cumplimiento</th>
+                                                    <th style="width: 40px;"></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {% for producto in tipo.productos %}
-                                                <tr>
-                                                    <td>{{ producto.name }}</td>
-                                                    <td>{{ producto.plan_qty|floatformat:0 }}</td>
-                                                    <td class="usd">${{ producto.plan_usd|floatformat:2 }}</td>
-                                                    <td>{{ producto.salida_plan_qty|floatformat:0 }}</td>
-                                                    <td class="usd">${{ producto.salida_plan_usd|floatformat:2 }}</td>
-                                                    <td class="{% if producto.percent_qty >= 80 %}percent-high{% elif producto.percent_qty >= 50 %}percent-medium{% else %}percent-low{% endif %}">
-                                                        {{ producto.percent_qty|floatformat:1 }}%
+                                                {% for producto in categoria.productos %}
+                                                <tr onclick="toggleProducto(this)" style="cursor: pointer;">
+                                                    <td style="font-family: monospace; font-weight: 600;">{{ producto.code }}
                                                     </td>
-                                                    <td class="{% if producto.percent_usd >= 80 %}percent-high{% elif producto.percent_usd >= 50 %}percent-medium{% else %}percent-low{% endif %}">
-                                                        {{ producto.percent_usd|floatformat:1 }}%
+                                                    <td>{{ producto.name }}</td>
+                                                    <td>{{ producto.plan|floatformat:0 }}</td>
+                                                    <td>{{ producto.salida|floatformat:0 }}</td>
+                                                    <td
+                                                        class="{% if producto.percent >= 80 %}percent-high{% elif producto.percent >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                                        {{ producto.percent|floatformat:1 }}%
+                                                    </td>
+                                                    <td style="text-align: center;">▼</td>
+                                                </tr>
+                                                <tr class="producto-detalle"
+                                                    style="display: none; background: #f9f9f9;">
+                                                    <td colspan="6" style="padding: 16px 60px;">
+                                                        <div
+                                                            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 12px;">
+                                                            <div>
+                                                                <strong style="color: #5a5a5a;">Code:</strong><br>
+                                                                <span style="font-family: monospace;">{{ producto.code }}</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong style="color: #5a5a5a;">Name:</strong><br>
+                                                                <span>{{ producto.name }}</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong style="color: #5a5a5a;">Group:</strong><br>
+                                                                <span>{{ producto.group|default:"N/A" }}</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong
+                                                                    style="color: #5a5a5a;">Manufacturer:</strong><br>
+                                                                <span>{{ producto.manufacturer|default:"N/A" }}</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong style="color: #5a5a5a;">Category:</strong><br>
+                                                                <span>{{ producto.category|default:"N/A" }}</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong
+                                                                    style="color: #5a5a5a;">Subcategory:</strong><br>
+                                                                <span>{{ producto.subcategory|default:"N/A" }}</span>
+                                                            </div>
+                                                            {% if producto.size %}
+                                                            <div>
+                                                                <strong style="color: #5a5a5a;">Size:</strong><br>
+                                                                <span>{{ producto.size }}</span>
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                                 {% endfor %}
                                             </tbody>
                                         </table>
                                     </div>
+                                    {% endfor %}
                                 </div>
-                                {% endfor %}
                             </div>
+                            {% endfor %}
                         </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="no-data">
+                <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+                <p>No hay datos de cumplimiento disponibles.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Tab 2: Tabla Resumen por CEDIS -->
+        <div id="tab-cedis" class="tab-content {% if active_tab == 'cedis' %}active{% endif %}">
+            {% if resumen_cedis %}
+            <div style="margin-bottom: 16px; text-align: right;">
+                <a href="?plan_date={{ plan_date|date:'Y-m-d' }}&salida_date={{ salida_date|date:'Y-m-d' }}&export=cedis"
+                    class="btn btn-secondary">
+                    📥 Descargar CSV
+                </a>
+            </div>
+            <div class="card" style="padding: 0; overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="text-align: left; vertical-align: middle;">CENDIS</th>
+                            <th colspan="2" class="group-header">Planificado</th>
+                            <th colspan="4" class="group-header">Planificado Despachado</th>
+                            <th colspan="2" class="group-header">NO Planificado</th>
+                            <th colspan="2" class="group-header">Total Despachado</th>
+                        </tr>
+                        <tr>
+                            <th>Unidades</th>
+                            <th>USD</th>
+                            <th>Unidades</th>
+                            <th>USD</th>
+                            <th>% Unid.</th>
+                            <th>% USD</th>
+                            <th>Unidades</th>
+                            <th>USD</th>
+                            <th>Unidades</th>
+                            <th>USD</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in resumen_cedis %}
+                        <tr>
+                            <td>{{ row.name }}</td>
+                            <td>{{ row.plan_qty|floatformat:0 }}</td>
+                            <td class="usd">${{ row.plan_usd|floatformat:2 }}</td>
+                            <td>{{ row.salida_plan_qty|floatformat:0 }}</td>
+                            <td class="usd">${{ row.salida_plan_usd|floatformat:2 }}</td>
+                            <td
+                                class="{% if row.percent_qty >= 80 %}percent-high{% elif row.percent_qty >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                {{ row.percent_qty|floatformat:1 }}%
+                            </td>
+                            <td
+                                class="{% if row.percent_usd >= 80 %}percent-high{% elif row.percent_usd >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                {{ row.percent_usd|floatformat:1 }}%
+                            </td>
+                            <td>{{ row.salida_noplan_qty|floatformat:0 }}</td>
+                            <td class="usd">${{ row.salida_noplan_usd|floatformat:2 }}</td>
+                            <td><strong>{{ row.total_salida_qty|floatformat:0 }}</strong></td>
+                            <td class="usd"><strong>${{ row.total_salida_usd|floatformat:2 }}</strong></td>
+                        </tr>
                         {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td><strong>TOTAL NACIONAL</strong></td>
+                            <td>{{ nacional.plan_qty|floatformat:0 }}</td>
+                            <td class="usd">${{ nacional.plan_usd|floatformat:2 }}</td>
+                            <td>{{ nacional.salida_plan_qty|floatformat:0 }}</td>
+                            <td class="usd">${{ nacional.salida_plan_usd|floatformat:2 }}</td>
+                            <td
+                                class="{% if nacional.percent_qty >= 80 %}percent-high{% elif nacional.percent_qty >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                {{ nacional.percent_qty|floatformat:1 }}%
+                            </td>
+                            <td
+                                class="{% if nacional.percent_usd >= 80 %}percent-high{% elif nacional.percent_usd >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                {{ nacional.percent_usd|floatformat:1 }}%
+                            </td>
+                            <td>{{ nacional.salida_noplan_qty|floatformat:0 }}</td>
+                            <td class="usd">${{ nacional.salida_noplan_usd|floatformat:2 }}</td>
+                            <td><strong>{{ nacional.total_salida_qty|floatformat:0 }}</strong></td>
+                            <td class="usd"><strong>${{ nacional.total_salida_usd|floatformat:2 }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-data">
+                <div style="font-size: 48px; margin-bottom: 16px;">🏭</div>
+                <p>No hay datos por CENDIS disponibles.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Tab 3: Resumen por Tienda -->
+        <div id="tab-tiendas" class="tab-content {% if active_tab == 'tiendas' %}active{% endif %}">
+            {% if resumen_tiendas or gerentes %}
+            <div
+                style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <!-- Filtro por Gerente -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label for="gerente_filter" style="font-weight: 600; color: #333;">👤 Filtrar por Gerente:</label>
+                    <select id="gerente_filter" name="gerente" onchange="filterByGerente(this.value)"
+                        style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; min-width: 200px;">
+                        <option value="">Todos los Gerentes</option>
+                        {% for gerente in gerentes %}
+                        <option value="{{ gerente.id }}" {% if selected_gerente.id == gerente.id %}selected{% endif %}>
+                            {{ gerente.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- Descargar CSV -->
+                <a href="?plan_date={{ plan_date|date:'Y-m-d' }}&salida_date={{ salida_date|date:'Y-m-d' }}&export=tiendas{% if selected_gerente %}&gerente={{ selected_gerente.id }}{% endif %}"
+                    class="btn btn-secondary">
+                    📥 Descargar CSV
+                </a>
+            </div>
+
+            {% for tienda in resumen_tiendas %}
+            <div class="cedis-block">
+                <div class="cedis-header" onclick="toggleCedis(this)">
+                    <div>
+                        🏪 {{ tienda.name }}
+                    </div>
+                    <div>
+                        <span class="percent">{{ tienda.percent_qty|floatformat:1 }}% Cumplimiento</span>
+                        <span style="margin-left: 20px;">Planif: {{ tienda.plan_qty|miles }} unid. | {{ tienda.plan_usd|miles_usd }}</span>
+                        <span style="margin-left: 20px;">Despachado: {{ tienda.salida_plan_qty|miles }} unid. | {{ tienda.salida_plan_usd|miles_usd }}</span>
                     </div>
                 </div>
-                {% endfor %}
-            {% else %}
-                <div class="no-data">
-                    <div style="font-size: 48px; margin-bottom: 16px;">🏪</div>
-                    <p>No hay datos por tienda disponibles.</p>
+                <div class="cedis-content" style="display: none;">
+                    {% for tipo in tienda.tipos %}
+                    <div class="tipo-block">
+                        <div class="tipo-header" onclick="toggleTipo(this)">
+                            <span>📦 {{ tipo.name }}</span>
+                            <span class="percent">
+                                {{ tipo.salida_plan_qty|miles }} / {{ tipo.plan_qty|miles }} = {{ tipo.percent_qty|floatformat:1 }}%
+                            </span>
+                        </div>
+                        <div style="display: none;">
+                            {% for grupo in tipo.grupos %}
+                            <div class="tipo-block">
+                                <div class="tipo-header" onclick="toggleTipo(this)">
+                                    <span>🏷️ {{ grupo.name }}</span>
+                                    <span class="percent">
+                                        {{ grupo.salida_plan_qty|miles }} / {{ grupo.plan_qty|miles }} = {{ grupo.percent_qty|floatformat:1 }}%
+                                    </span>
+                                </div>
+                                <div style="display: none;">
+                                    {% for categoria in grupo.categorias %}
+                                    <div class="categoria-block">
+                                        <div class="categoria-header" onclick="toggleCategoria(this)">
+                                            <span>📂 {{ categoria.name }}</span>
+                                            <span class="percent">
+                                                {{ categoria.salida_plan_qty|miles }} / {{ categoria.plan_qty|miles }} = {{ categoria.percent_qty|floatformat:1 }}%
+                                            </span>
+                                        </div>
+                                        <table class="producto-table" style="display: none;">
+                                            <thead>
+                                                <tr>
+                                                    <th style="text-align: left;">Código</th>
+                                                    <th style="text-align: left;">Nombre</th>
+                                                    <th>Plan Unid.</th>
+                                                    <th>Plan USD</th>
+                                                    <th>Desp. Unid.</th>
+                                                    <th>Desp. USD</th>
+                                                    <th>% Unid.</th>
+                                                    <th>% USD</th>
+                                                    <th style="width: 40px;"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for producto in categoria.productos %}
+                                                <tr onclick="toggleProducto(this)" style="cursor: pointer;">
+                                                    <td style="font-family: monospace; font-weight: 600;">{{ producto.code }}</td>
+                                                    <td>{{ producto.name }}</td>
+                                                    <td>{{ producto.plan_qty|miles }}</td>
+                                                    <td class="usd">{{ producto.plan_usd|miles_usd }}</td>
+                                                    <td>{{ producto.salida_plan_qty|miles }}</td>
+                                                    <td class="usd">{{ producto.salida_plan_usd|miles_usd }}</td>
+                                                    <td
+                                                        class="{% if producto.percent_qty >= 80 %}percent-high{% elif producto.percent_qty >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                                        {{ producto.percent_qty|floatformat:1 }}%
+                                                    </td>
+                                                    <td
+                                                        class="{% if producto.percent_usd >= 80 %}percent-high{% elif producto.percent_usd >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                                                        {{ producto.percent_usd|floatformat:1 }}%
+                                                    </td>
+                                                    <td style="text-align: center;">▼</td>
+                                                </tr>
+                                                <tr class="producto-detalle"
+                                                    style="display: none; background: #f9f9f9;">
+                                                    <td colspan="9" style="padding: 16px 60px;">
+                                                        <div
+                                                            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 12px;">
+                                                            <div>
+                                                                <strong style="color: #5a5a5a;">Code:</strong><br>
+                                                                <span style="font-family: monospace;">{{ producto.code }}</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong style="color: #5a5a5a;">Name:</strong><br>
+                                                                <span>{{ producto.name }}</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong style="color: #5a5a5a;">Group:</strong><br>
+                                                                <span>{{ producto.group|default:"N/A" }}</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong
+                                                                    style="color: #5a5a5a;">Manufacturer:</strong><br>
+                                                                <span>{{ producto.manufacturer|default:"N/A" }}</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong style="color: #5a5a5a;">Category:</strong><br>
+                                                                <span>{{ producto.category|default:"N/A" }}</span>
+                                                            </div>
+                                                            <div>
+                                                                <strong
+                                                                    style="color: #5a5a5a;">Subcategory:</strong><br>
+                                                                <span>{{ producto.subcategory|default:"N/A" }}</span>
+                                                            </div>
+                                                            {% if producto.size %}
+                                                            <div>
+                                                                <strong style="color: #5a5a5a;">Size:</strong><br>
+                                                                <span>{{ producto.size }}</span>
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="no-data">
+                <div style="font-size: 48px; margin-bottom: 16px;">🏪</div>
+                <p>No hay datos por tienda disponibles.</p>
+            </div>
             {% endif %}
         </div>
 
@@ -742,37 +978,66 @@
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 const tabName = tab.dataset.tab;
-                
+
                 // Update tabs
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                
+
                 // Update content
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 document.getElementById('tab-' + tabName).classList.add('active');
-                
+
                 // Update hidden input
                 document.getElementById('tabInput').value = tabName;
             });
         });
-        
+
+        // Filter by Gerente Regional
+        function filterByGerente(gerenteId) {
+            const url = new URL(window.location.href);
+            if (gerenteId) {
+                url.searchParams.set('gerente', gerenteId);
+            } else {
+                url.searchParams.delete('gerente');
+            }
+            url.searchParams.set('tab', 'tiendas');
+            window.location.href = url.toString();
+        }
+
         // Toggle CEDIS block
         function toggleCedis(header) {
             const content = header.nextElementSibling;
             content.style.display = content.style.display === 'none' ? 'block' : 'none';
         }
-        
+
         // Toggle Tipo block
         function toggleTipo(header) {
             const content = header.nextElementSibling;
             content.style.display = content.style.display === 'none' ? 'block' : 'none';
         }
-        
+
         // Toggle Categoria block
         function toggleCategoria(header) {
             const table = header.nextElementSibling;
             table.style.display = table.style.display === 'none' ? 'table' : 'none';
         }
+
+        // Toggle Producto details
+        function toggleProducto(row) {
+            const detalleRow = row.nextElementSibling;
+            const arrow = row.querySelector('td:last-child');
+
+            if (detalleRow && detalleRow.classList.contains('producto-detalle')) {
+                if (detalleRow.style.display === 'none' || !detalleRow.style.display) {
+                    detalleRow.style.display = 'table-row';
+                    if (arrow) arrow.textContent = '▲';
+                } else {
+                    detalleRow.style.display = 'none';
+                    if (arrow) arrow.textent
+                }
+            }
+        }
     </script>
 </body>
+
 </html>

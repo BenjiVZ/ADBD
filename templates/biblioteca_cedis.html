@@ -1,113 +1,297 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Biblioteca de CEDIS</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: #f5f5f5;
             color: #2c2c2c;
             line-height: 1.6;
         }
-        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
         header {
             background: #ffffff;
             border-bottom: 2px solid #dc0000;
             padding: 20px 0;
             margin-bottom: 32px;
         }
-        .nav { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; max-width: 1400px; margin: 0 auto; padding: 0 24px; }
-        .nav a { color: #2c2c2c; text-decoration: none; font-weight: 500; font-size: 15px; }
-        .nav a:hover { color: #dc0000; }
-        .nav a.active { color: #dc0000; border-bottom: 2px solid #dc0000; }
-        h1 { font-size: 28px; font-weight: 300; color: #dc0000; margin-bottom: 8px; }
-        .subtitle { color: #666; margin-bottom: 24px; }
-        
-        .stats { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
-        .stat-card { 
-            background: white; 
-            padding: 16px 24px; 
-            border-radius: 8px; 
+
+        .nav {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            flex-wrap: wrap;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .nav a {
+            color: #2c2c2c;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .nav a:hover {
+            color: #dc0000;
+        }
+
+        .nav a.active {
+            color: #dc0000;
+            border-bottom: 2px solid #dc0000;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 300;
+            color: #dc0000;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 16px 24px;
+            border-radius: 8px;
             border-left: 4px solid #dc0000;
             min-width: 150px;
         }
-        .stat-card.warning { border-left-color: #f57c00; }
-        .stat-card.success { border-left-color: #388e3c; }
-        .stat-number { font-size: 32px; font-weight: 600; color: #333; }
-        .stat-label { font-size: 13px; color: #666; }
-        
-        .section { background: white; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
-        .section-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-        
-        .alert { padding: 16px; border-radius: 6px; margin-bottom: 16px; }
-        .alert-warning { background: #fff3e0; border-left: 4px solid #f57c00; color: #e65100; }
-        .alert-info { background: #e3f2fd; border-left: 4px solid #1976d2; color: #1565c0; }
-        .alert-success { background: #e8f5e9; border-left: 4px solid #388e3c; color: #2e7d32; }
-        
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #fafafa; font-weight: 600; color: #333; font-size: 13px; }
-        tr:hover { background: #f9f9f9; }
-        
-        .badge { 
-            display: inline-block; 
-            padding: 4px 10px; 
-            border-radius: 12px; 
-            font-size: 11px; 
-            font-weight: 600; 
+
+        .stat-card.warning {
+            border-left-color: #f57c00;
         }
-        .badge-warning { background: #fff3e0; color: #e65100; }
-        .badge-success { background: #e8f5e9; color: #2e7d32; }
-        .badge-info { background: #e3f2fd; color: #1565c0; }
-        
-        .btn { 
-            padding: 8px 16px; 
-            border: none; 
-            border-radius: 4px; 
-            cursor: pointer; 
-            font-weight: 500; 
-            font-size: 13px; 
+
+        .stat-card.success {
+            border-left-color: #388e3c;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            border-left: 4px solid #f57c00;
+            color: #e65100;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            color: #1565c0;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            border-left: 4px solid #388e3c;
+            color: #2e7d32;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #fafafa;
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-warning {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .badge-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .badge-info {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
             text-decoration: none;
             display: inline-block;
         }
-        .btn-danger { background: #dc0000; color: white; }
-        .btn-danger:hover { background: #b80000; }
-        .btn-primary { background: #1976d2; color: white; }
-        .btn-primary:hover { background: #1565c0; }
-        .btn-success { background: #388e3c; color: white; }
-        .btn-success:hover { background: #2e7d32; }
-        .btn-outline { background: transparent; border: 1px solid #ccc; color: #666; }
-        .btn-outline:hover { background: #f5f5f5; }
-        .btn-sm { padding: 6px 12px; font-size: 12px; }
-        
-        .actions { display: flex; gap: 8px; align-items: center; }
-        
-        select, input[type="text"] { 
-            padding: 8px 12px; 
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            font-size: 14px; 
+
+        .btn-danger {
+            background: #dc0000;
+            color: white;
         }
-        select { min-width: 200px; }
-        
-        .row-sin-registrar { background: #fff8e1; }
-        .row-oficial { background: #ffffff; }
-        
-        .source-badges { display: flex; gap: 4px; }
-        
+
+        .btn-danger:hover {
+            background: #b80000;
+        }
+
+        .btn-primary {
+            background: #1976d2;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1565c0;
+        }
+
+        .btn-success {
+            background: #388e3c;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #2e7d32;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #ccc;
+            color: #666;
+        }
+
+        .btn-outline:hover {
+            background: #f5f5f5;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        select,
+        input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        select {
+            min-width: 200px;
+        }
+
+        .row-sin-registrar {
+            background: #fff8e1;
+        }
+
+        .row-oficial {
+            background: #ffffff;
+        }
+
+        .source-badges {
+            display: flex;
+            gap: 4px;
+        }
+
         .modal-overlay {
             display: none;
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
             justify-content: center;
             align-items: center;
         }
-        .modal-overlay.active { display: flex; }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
         .modal {
             background: white;
             padding: 24px;
@@ -115,13 +299,31 @@
             max-width: 500px;
             width: 90%;
         }
-        .modal h3 { margin-bottom: 16px; }
-        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-        
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; margin-bottom: 4px; font-weight: 500; color: #333; }
+
+        .modal h3 {
+            margin-bottom: 16px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: #333;
+        }
     </style>
 </head>
+
 <body>
     <header>
         <nav class="nav">
@@ -135,7 +337,8 @@
 
     <div class="container">
         <h1>📦 Biblioteca de CEDIS (Almacenes)</h1>
-        <p class="subtitle">El sistema analiza tus datos crudos y te muestra todos los nombres de CEDIS encontrados. Tú decides cuáles son oficiales.</p>
+        <p class="subtitle">El sistema analiza tus datos crudos y te muestra todos los nombres de CENDIS encontrados. Tú
+            decides cuáles son oficiales.</p>
 
         <!-- Estadísticas -->
         <div class="stats">
@@ -155,13 +358,19 @@
                 <div class="stat-number">{{ mapeados|length }}</div>
                 <div class="stat-label">Mapeados</div>
             </div>
+            <div class="stat-card" style="border-left-color: #757575;">
+                <div class="stat-number">{{ ignorados|length }}</div>
+                <div class="stat-label">Ignorados</div>
+            </div>
         </div>
 
         {% if sin_registrar %}
         <!-- Alerta de nombres sin registrar -->
         <div class="alert alert-warning">
-            <strong>⚠️ Hay {{ sin_registrar|length }} nombre(s) de CEDIS en tus datos que no están registrados.</strong><br>
-            Para cada uno, puedes: <strong>1)</strong> Crearlo como oficial, o <strong>2)</strong> Mapearlo a uno existente si es una variante.
+            <strong>⚠️ Hay {{ sin_registrar|length }} nombre(s) de CENDIS en tus datos que no están
+                registrados.</strong><br>
+            Para cada uno, puedes: <strong>1)</strong> Crearlo como oficial, o <strong>2)</strong> Mapearlo a uno
+            existente si es una variante.
         </div>
 
         <!-- Sección: Sin registrar -->
@@ -174,7 +383,8 @@
                     {% for item in sin_registrar %}
                     <input type="hidden" name="nombres[]" value="{{ item.nombre }}">
                     {% endfor %}
-                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('¿Crear todos como oficiales?')">
+                    <button type="submit" class="btn btn-success btn-sm"
+                        onclick="return confirm('¿Crear todos como oficiales?')">
                         ✅ Crear todos como oficiales
                     </button>
                 </form>
@@ -204,7 +414,7 @@
                                 <input type="text" name="codigo" placeholder="Código" style="width: 80px;">
                                 <button type="submit" class="btn btn-success btn-sm">✅ Crear oficial</button>
                             </form>
-                            
+
                             <!-- O mapear a existente -->
                             <form method="post" style="display: inline;">
                                 {% csrf_token %}
@@ -218,6 +428,15 @@
                                 </select>
                                 <button type="submit" class="btn btn-primary btn-sm">🔗 Mapear</button>
                             </form>
+
+                            <!-- O ignorar -->
+                            <form method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="ignorar">
+                                <input type="hidden" name="nombre" value="{{ item.nombre }}">
+                                <button type="submit" class="btn btn-outline btn-sm"
+                                    title="No procesar en normalización">🚫 Ignorar</button>
+                            </form>
                         </td>
                     </tr>
                     {% endfor %}
@@ -226,7 +445,45 @@
         </div>
         {% else %}
         <div class="alert alert-success">
-            <strong>✅ ¡Perfecto!</strong> Todos los nombres de CEDIS en tus datos están registrados o mapeados.
+            <strong>✅ ¡Perfecto!</strong> Todos los nombres de CENDIS en tus datos están registrados o mapeados.
+        </div>
+        {% endif %}
+
+        {% if ignorados %}
+        <!-- Sección: Ignorados -->
+        <div class="section" style="background: #f5f5f5;">
+            <div class="section-title">🚫 Nombres IGNORADOS (no se procesarán)</div>
+            <div class="alert alert-info" style="margin-bottom: 16px;">
+                Estos nombres serán saltados durante la normalización. Si cambias de opinión, puedes des-ignorarlos.
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre en datos crudos</th>
+                        <th>Fuente</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in ignorados %}
+                    <tr style="background: #eeeeee; opacity: 0.8;">
+                        <td><s>{{ item.nombre }}</s></td>
+                        <td class="source-badges">
+                            {% if item.en_planificacion %}<span class="badge badge-info">Planificación</span>{% endif %}
+                            {% if item.en_salida %}<span class="badge badge-info">Salida</span>{% endif %}
+                        </td>
+                        <td>
+                            <form method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="des_ignorar">
+                                <input type="hidden" name="nombre" value="{{ item.nombre }}">
+                                <button type="submit" class="btn btn-success btn-sm">✅ Activar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
         {% endif %}
 
@@ -235,14 +492,15 @@
         <div class="section">
             <div class="section-title">🔗 Nombres MAPEADOS (alias guardados)</div>
             <div class="alert alert-info" style="margin-bottom: 16px;">
-                Estos nombres en los datos crudos se traducirán automáticamente al CEDIS oficial durante la normalización.
+                Estos nombres en los datos crudos se traducirán automáticamente al CENDIS oficial durante la
+                normalización.
             </div>
             <table>
                 <thead>
                     <tr>
                         <th>Nombre en datos crudos</th>
                         <th>→</th>
-                        <th>CEDIS Oficial</th>
+                        <th>CENDIS Oficial</th>
                         <th>Fuente</th>
                         <th>Acciones</th>
                     </tr>
@@ -258,7 +516,8 @@
                             {% if item.en_salida %}<span class="badge badge-info">Salida</span>{% endif %}
                         </td>
                         <td>
-                            <form method="post" style="display: inline;" onsubmit="return confirm('¿Eliminar este mapeo?');">
+                            <form method="post" style="display: inline;"
+                                onsubmit="return confirm('¿Eliminar este mapeo?');">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="eliminar_mapeo">
                                 <input type="hidden" name="mapeo_id" value="{{ item.mapeo.id }}">
@@ -274,7 +533,7 @@
 
         <!-- Sección: Oficiales -->
         <div class="section">
-            <div class="section-title">✅ CEDIS Oficiales (Registrados)</div>
+            <div class="section-title">✅ CENDIS Oficiales (Registrados)</div>
             {% if oficiales %}
             <table>
                 <thead>
@@ -293,11 +552,13 @@
                         <td>{{ item.cedis.code }}</td>
                         <td><strong>{{ item.nombre }}</strong></td>
                         <td class="source-badges">
-                            {% if item.en_planificacion %}<span class="badge badge-success">Planificación</span>{% endif %}
+                            {% if item.en_planificacion %}<span class="badge badge-success">Planificación</span>
+                            {% endif %}
                             {% if item.en_salida %}<span class="badge badge-success">Salida</span>{% endif %}
                         </td>
                         <td>
-                            <form method="post" style="display: inline;" onsubmit="return confirm('¿Eliminar este CEDIS?');">
+                            <form method="post" style="display: inline;"
+                                onsubmit="return confirm('¿Eliminar este CEDIS?');">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="eliminar_cedis">
                                 <input type="hidden" name="cedis_id" value="{{ item.cedis.id }}">
@@ -309,14 +570,14 @@
                 </tbody>
             </table>
             {% else %}
-            <p style="color: #999; text-align: center; padding: 24px;">No hay CEDIS oficiales registrados aún.</p>
+            <p style="color: #999; text-align: center; padding: 24px;">No hay CENDIS oficiales registrados aún.</p>
             {% endif %}
         </div>
 
         <!-- CEDIS que están en BD pero no en datos -->
         {% if cedis_list %}
         <div class="section">
-            <div class="section-title">📋 Todos los CEDIS en la base de datos</div>
+            <div class="section-title">📋 Todos los CENDIS en la base de datos</div>
             <table>
                 <thead>
                     <tr>
@@ -333,7 +594,8 @@
                         <td>{{ c.code }}</td>
                         <td>{{ c.origin }}</td>
                         <td>
-                            <form method="post" style="display: inline;" onsubmit="return confirm('¿Eliminar este CEDIS?');">
+                            <form method="post" style="display: inline;"
+                                onsubmit="return confirm('¿Eliminar este CEDIS?');">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="eliminar_cedis">
                                 <input type="hidden" name="cedis_id" value="{{ c.id }}">
@@ -349,7 +611,7 @@
 
         <!-- Crear nuevo manualmente -->
         <div class="section">
-            <div class="section-title">➕ Crear nuevo CEDIS manualmente</div>
+            <div class="section-title">➕ Crear nuevo CENDIS manualmente</div>
             <form method="post" class="actions">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="crear_oficial">
@@ -360,4 +622,5 @@
         </div>
     </div>
 </body>
+
 </html>

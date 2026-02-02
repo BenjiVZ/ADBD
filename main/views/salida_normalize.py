@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views import View
 
-from ..models import Cendis, Product, Salida, SalidaNormalizada, Sucursal, MapeoCedis, MapeoSucursal
+from ..models import Cendis, Product, Salida, SalidaNormalizada, Sucursal, MapeoCedis, MapeoSucursal, IgnorarCedis, IgnorarSucursal
 
 
 class SalidaNormalizeView(View):
@@ -109,6 +109,12 @@ class SalidaNormalizeView(View):
         print(f"✅ Cargados {len(mapeos_cedis)} mapeos de CEDIS")
         print(f"✅ Cargados {len(mapeos_sucursales)} mapeos de Sucursales")
         
+        # Cargar nombres ignorados
+        ignorados_cedis = set(i.lower() for i in IgnorarCedis.objects.values_list("nombre_crudo", flat=True))
+        ignorados_sucursales = set(i.lower() for i in IgnorarSucursal.objects.values_list("nombre_crudo", flat=True))
+        print(f"🚫 Cargados {len(ignorados_cedis)} CEDIS ignorados")
+        print(f"🚫 Cargados {len(ignorados_sucursales)} Sucursales ignoradas")
+        
         # Mapear por NOMBRE y por CÓDIGO/ID
         sucursales_map = {}
         for s in sucursales:
@@ -174,6 +180,19 @@ class SalidaNormalizeView(View):
                     print(f"   Origen raw (almacen): '{raw.nombre_almacen_origen}'")
                     print(f"   Destino raw: '{raw.nombre_sucursal_destino}'")
                     print(f"   SKU: '{raw.sku}'")
+                
+                # Verificar si debe ser ignorado
+                origen_key = raw.nombre_almacen_origen.strip().lower() if raw.nombre_almacen_origen else ""
+                destino_key = (raw.nombre_sucursal_destino or raw.sucursal_destino_propuesto or "").strip().lower()
+                
+                if origen_key in ignorados_cedis or destino_key in ignorados_sucursales:
+                    raw.normalize_status = "ignored"
+                    raw.normalize_notes = "Ignorado por configuración"
+                    raw.normalized_at = None
+                    to_update_raw.append(raw)
+                    if record_count <= 5:
+                        print(f"   🚫 IGNORADO por configuración")
+                    continue
                 
                 issues = []
 

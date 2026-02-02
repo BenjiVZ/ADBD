@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Normalizar Todo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            color: #2c2c2c;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            color: #dc0000;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 24px;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            color: #dc0000;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .summary-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        .stat-value {
+            font-weight: 600;
+        }
+
+        .stat-value.pending {
+            color: #ffc107;
+        }
+
+        .stat-value.ok {
+            color: #28a745;
+        }
+
+        .stat-value.error {
+            color: #dc3545;
+        }
+
+        .action-section {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-normalize {
+            background: linear-gradient(135deg, #dc0000 0%, #a00000 100%);
+            color: white;
+            border: none;
+            padding: 16px 48px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-normalize:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 0, 0, 0.3);
+        }
+
+        .btn-normalize:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .results {
+            margin-top: 32px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .results h3 {
+            color: #155724;
+            margin-bottom: 16px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .result-item {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .result-item h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .result-item .stat {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 16px;
+            color: #666;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ddd;
+            border-top-color: #dc0000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Volver al inicio</a>
+
+        <h1>🔄 Normalizar Todo</h1>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <h3>📋 Planificaciones</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Pendientes</span>
+                    <span class="stat-value pending">{{ summary.planificacion.pending }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Normalizadas</span>
+                    <span class="stat-value ok">{{ summary.planificacion.ok }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Con errores</span>
+                    <span class="stat-value error">{{ summary.planificacion.error }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total</span>
+                    <span class="stat-value">{{ summary.planificacion.total }}</span>
+                </div>
+                {% if summary.planificacion.error > 0 %}
+                <a href="/planificacion/errores/"
+                    style="display: block; margin-top: 16px; padding: 10px; background: #ffebee; border-radius: 6px; text-decoration: none; color: #c62828; font-weight: 600; text-align: center;">
+                    🔧 Resolver {{ summary.planificacion.error }} errores
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="summary-card">
+                <h3>🚚 Salidas</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Pendientes</span>
+                    <span class="stat-value pending">{{ summary.salidas.pending }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Normalizadas</span>
+                    <span class="stat-value ok">{{ summary.salidas.ok }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Con errores</span>
+                    <span class="stat-value error">{{ summary.salidas.error }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total</span>
+                    <span class="stat-value">{{ summary.salidas.total }}</span>
+                </div>
+                {% if summary.salidas.error > 0 %}
+                <a href="/salidas/errores/"
+                    style="display: block; margin-top: 16px; padding: 10px; background: #ffebee; border-radius: 6px; text-decoration: none; color: #c62828; font-weight: 600; text-align: center;">
+                    🔧 Resolver {{ summary.salidas.error }} errores
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="action-section">
+            <form method="post" id="normalizeForm">
+                {% csrf_token %}
+                <button type="submit" class="btn-normalize" id="btnNormalize" {% if summary.planificacion.pending == 0 and summary.salidas.pending == 0 %}disabled{% endif %}>
+                    🚀 Normalizar Todo Ahora
+                </button>
+                <div class="loading" id="loading">
+                    <span class="spinner"></span>
+                    Procesando... esto puede tomar unos segundos
+                </div>
+            </form>
+
+            {% if ran and results %}
+            <div class="results">
+                <h3>✅ Normalización Completada</h3>
+                <div class="results-grid">
+                    <div class="result-item">
+                        <h4>📋 Planificaciones</h4>
+                        <div class="stat">
+                            <span>Procesados:</span>
+                            <span>{{ results.planificacion.processed }}</span>
+                        </div>
+                        <div class="stat">
+                            <span>Creados:</span>
+                            <span>{{ results.planificacion.created }}</span>
+                        </div>
+                        <div class="stat">
+                            <span>Actualizados:</span>
+                            <span>{{ results.planificacion.updated }}</span>
+                        </div>
+                        <div class="stat">
+                            <span>Errores:</span>
+                            <span>{{ results.planificacion.errors }}</span>
+                        </div>
+                    </div>
+                    <div class="result-item">
+                        <h4>🚚 Salidas</h4>
+                        <div class="stat">
+                            <span>Procesados:</span>
+                            <span>{{ results.salidas.processed }}</span>
+                        </div>
+                        <div class="stat">
+                            <span>Creados:</span>
+                            <span>{{ results.salidas.created }}</span>
+                        </div>
+                        <div class="stat">
+                            <span>Actualizados:</span>
+                            <span>{{ results.salidas.updated }}</span>
+                        </div>
+                        <div class="stat">
+                            <span>Errores:</span>
+                            <span>{{ results.salidas.errors }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('normalizeForm').addEventListener('submit', function () {
+            document.getElementById('btnNormalize').disabled = true;
+            document.getElementById('loading').classList.add('active');
+        });
+    </script>
+</body>
+
+</html>

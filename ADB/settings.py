@@ -35,6 +35,9 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:2222',
 ]
 
+# Aumentar límite de campos para permitir eliminación masiva en el admin
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 50000
+
 
 # Application definition
 
@@ -45,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'main',
 ]
 

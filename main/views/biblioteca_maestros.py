@@ -5,7 +5,10 @@ Los mapeos se guardan en tablas separadas (MapeoCedis, MapeoSucursal) SIN modifi
 """
 from django.shortcuts import render, redirect
 from django.views import View
-from main.models import Planificacion, Salida, Cendis, Sucursal, MapeoCedis, MapeoSucursal
+from main.models import (
+    Planificacion, Salida, Cendis, Sucursal, MapeoCedis, MapeoSucursal,
+    IgnorarCedis, IgnorarSucursal
+)
 
 
 class BibliotecaCedisView(View):
@@ -43,7 +46,10 @@ class BibliotecaCedisView(View):
         # Obtener mapeos existentes
         mapeos_existentes = {m.nombre_crudo: m for m in MapeoCedis.objects.select_related("cedis_oficial").all()}
         
-        # Clasificar: oficiales vs mapeados vs sin registrar
+        # Obtener nombres ignorados
+        nombres_ignorados = set(IgnorarCedis.objects.values_list("nombre_crudo", flat=True))
+        
+        # Clasificar: oficiales vs mapeados vs ignorados vs sin registrar
         nombres_info = []
         for nombre in sorted(todos_nombres):
             # 1. Verificar si coincide por nombre exacto (origin)
@@ -91,7 +97,18 @@ class BibliotecaCedisView(View):
                     "en_salida": nombre in nombres_salida,
                     "es_id": False,
                 })
-            # 5. Sin registrar ni mapear
+            # 5. Verificar si está ignorado
+            elif nombre in nombres_ignorados:
+                nombres_info.append({
+                    "nombre": nombre,
+                    "estado": "ignorado",
+                    "cedis": None,
+                    "mapeo": None,
+                    "en_planificacion": nombre in nombres_planificacion,
+                    "en_salida": nombre in nombres_salida,
+                    "es_id": False,
+                })
+            # 6. Sin registrar ni mapear
             else:
                 nombres_info.append({
                     "nombre": nombre,
@@ -107,12 +124,14 @@ class BibliotecaCedisView(View):
         sin_registrar = [n for n in nombres_info if n["estado"] == "sin_registrar"]
         mapeados = [n for n in nombres_info if n["estado"] == "mapeado"]
         oficiales = [n for n in nombres_info if n["estado"] == "oficial"]
+        ignorados = [n for n in nombres_info if n["estado"] == "ignorado"]
         
         context = {
             "nombres_info": nombres_info,
             "sin_registrar": sin_registrar,
             "mapeados": mapeados,
             "oficiales": oficiales,
+            "ignorados": ignorados,
             "cedis_list": Cendis.objects.all().order_by("origin"),
             "total_encontrados": len(todos_nombres),
         }
@@ -167,6 +186,21 @@ class BibliotecaCedisView(View):
                         defaults={"code": "0000"}
                     )
         
+        elif action == "ignorar":
+            # Ignorar un nombre (no procesar en normalización)
+            nombre = request.POST.get("nombre", "").strip()
+            if nombre:
+                IgnorarCedis.objects.get_or_create(
+                    nombre_crudo=nombre,
+                    defaults={"razon": "Ignorado desde biblioteca de CEDIS"}
+                )
+        
+        elif action == "des_ignorar":
+            # Des-ignorar un nombre
+            nombre = request.POST.get("nombre", "").strip()
+            if nombre:
+                IgnorarCedis.objects.filter(nombre_crudo=nombre).delete()
+        
         return redirect("biblioteca_cedis")
 
 
@@ -214,7 +248,10 @@ class BibliotecaSucursalesView(View):
         # Obtener mapeos existentes
         mapeos_existentes = {m.nombre_crudo: m for m in MapeoSucursal.objects.select_related("sucursal_oficial").all()}
         
-        # Clasificar: oficiales vs mapeados vs sin registrar
+        # Obtener nombres ignorados
+        nombres_ignorados = set(IgnorarSucursal.objects.values_list("nombre_crudo", flat=True))
+        
+        # Clasificar: oficiales vs mapeados vs ignorados vs sin registrar
         nombres_info = []
         for nombre in sorted(todos_nombres):
             # 1. Verificar si coincide por nombre exacto
@@ -251,7 +288,18 @@ class BibliotecaSucursalesView(View):
                     "en_salida": nombre in nombres_salida_destino or nombre in nombres_salida_propuesto,
                     "es_id": False,
                 })
-            # 4. Sin registrar ni mapear
+            # 4. Verificar si está ignorado
+            elif nombre in nombres_ignorados:
+                nombres_info.append({
+                    "nombre": nombre,
+                    "estado": "ignorado",
+                    "sucursal": None,
+                    "mapeo": None,
+                    "en_planificacion": nombre in nombres_planificacion,
+                    "en_salida": nombre in nombres_salida_destino or nombre in nombres_salida_propuesto,
+                    "es_id": False,
+                })
+            # 5. Sin registrar ni mapear
             else:
                 nombres_info.append({
                     "nombre": nombre,
@@ -267,12 +315,14 @@ class BibliotecaSucursalesView(View):
         sin_registrar = [n for n in nombres_info if n["estado"] == "sin_registrar"]
         mapeados = [n for n in nombres_info if n["estado"] == "mapeado"]
         oficiales = [n for n in nombres_info if n["estado"] == "oficial"]
+        ignorados = [n for n in nombres_info if n["estado"] == "ignorado"]
         
         context = {
             "nombres_info": nombres_info,
             "sin_registrar": sin_registrar,
             "mapeados": mapeados,
             "oficiales": oficiales,
+            "ignorados": ignorados,
             "sucursales_list": Sucursal.objects.all().order_by("name"),
             "total_encontrados": len(todos_nombres),
         }
@@ -326,5 +376,20 @@ class BibliotecaSucursalesView(View):
                         name=nombre.strip(),
                         defaults={"bpl_id": "0"}
                     )
+        
+        elif action == "ignorar":
+            # Ignorar un nombre (no procesar en normalización)
+            nombre = request.POST.get("nombre", "").strip()
+            if nombre:
+                IgnorarSucursal.objects.get_or_create(
+                    nombre_crudo=nombre,
+                    defaults={"razon": "Ignorado desde biblioteca de sucursales"}
+                )
+        
+        elif action == "des_ignorar":
+            # Des-ignorar un nombre
+            nombre = request.POST.get("nombre", "").strip()
+            if nombre:
+                IgnorarSucursal.objects.filter(nombre_crudo=nombre).delete()
         
         return redirect("biblioteca_sucursales")

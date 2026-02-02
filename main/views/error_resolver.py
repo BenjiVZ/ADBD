@@ -6,7 +6,7 @@ from django.db import transaction
 from django.shortcuts import redirect, render
 from django.views import View
 
-from ..models import Cendis, Planificacion, Product, Salida, Sucursal
+from ..models import Cendis, Planificacion, Product, Salida, Sucursal, IgnorarCedis, IgnorarSucursal
 
 
 class PlanificacionErrorResolverView(View):
@@ -16,27 +16,49 @@ class PlanificacionErrorResolverView(View):
         # Obtener errores agrupados
         errors = Planificacion.objects.filter(normalize_status="error")
         
+        # Obtener nombres ignorados
+        cedis_ignorados = set(IgnorarCedis.objects.values_list("nombre_crudo", flat=True))
+        sucursales_ignoradas = set(IgnorarSucursal.objects.values_list("nombre_crudo", flat=True))
+        
         # Agrupar por tipo de error
         cedis_origen_faltantes = defaultdict(list)
         sucursales_faltantes = defaultdict(list)
         productos_faltantes = defaultdict(list)
         otros_errores = defaultdict(list)
         
+        # IDs de registros a marcar como ignorados
+        ids_to_ignore = []
+        
         for error in errors:
             notes = error.normalize_notes or ""
             # Buscar múltiples variantes de mensajes de error
             if ("CEDIS" in notes and "origen" in notes) or ("cedis" in notes and "origen" in notes) or ("almacén" in notes and "origen" in notes) or "origen no es un CEDIS" in notes or "Origen NO es un almacén CEDIS" in notes or "CEDIS (almacén) origen" in notes:
                 origen_name = error.cendis
-                cedis_origen_faltantes[origen_name].append(error.id)
+                # Verificar si está ignorado
+                if origen_name and origen_name in cedis_ignorados:
+                    ids_to_ignore.append(error.id)
+                else:
+                    cedis_origen_faltantes[origen_name].append(error.id)
             elif "Sucursal" in notes or "sucursal" in notes or "tienda" in notes:
                 sucursal_name = error.sucursal
-                sucursales_faltantes[sucursal_name].append(error.id)
+                # Verificar si está ignorado
+                if sucursal_name and sucursal_name in sucursales_ignoradas:
+                    ids_to_ignore.append(error.id)
+                else:
+                    sucursales_faltantes[sucursal_name].append(error.id)
             elif "Producto" in notes or "producto" in notes:
                 product_code = error.item_code
                 productos_faltantes[product_code].append(error.id)
             else:
                 # Errores que no encajan en las categorías anteriores
                 otros_errores[notes[:100]].append(error.id)
+        
+        # Marcar registros como ignorados si su nombre está en la lista de ignorados
+        if ids_to_ignore:
+            Planificacion.objects.filter(id__in=ids_to_ignore).update(
+                normalize_status="ignored",
+                normalize_notes="Ignorado por configuración de biblioteca"
+            )
         
         # Obtener sucursales, cendis y productos existentes para sugerencias
         existing_sucursales = list(Sucursal.objects.values_list('name', flat=True))
@@ -345,22 +367,37 @@ class SalidaErrorResolverView(View):
     def get(self, request, *args, **kwargs):
         errors = Salida.objects.filter(normalize_status="error")
         
+        # Obtener nombres ignorados
+        cedis_ignorados = set(IgnorarCedis.objects.values_list("nombre_crudo", flat=True))
+        sucursales_ignoradas = set(IgnorarSucursal.objects.values_list("nombre_crudo", flat=True))
+        
         cedis_origen_faltantes = defaultdict(list)
         sucursales_destino_faltantes = defaultdict(list)
         productos_faltantes = defaultdict(list)
         otros_errores = defaultdict(list)
+        
+        # IDs de registros a marcar como ignorados
+        ids_to_ignore = []
         
         for error in errors:
             notes = error.normalize_notes or ""
             # Detectar errores de CEDIS origen
             if ("CEDIS" in notes and "origen" in notes) or ("cedis" in notes and "origen" in notes) or ("almacén" in notes and "origen" in notes) or "origen NO es un almacén CEDIS" in notes or "Origen NO es un almacén CEDIS" in notes:
                 cedis_name = error.nombre_sucursal_origen
-                cedis_origen_faltantes[cedis_name].append(error.id)
+                # Verificar si está ignorado
+                if cedis_name and cedis_name in cedis_ignorados:
+                    ids_to_ignore.append(error.id)
+                else:
+                    cedis_origen_faltantes[cedis_name].append(error.id)
             # Detectar errores de Sucursal destino
             elif "Sucursal" in notes or "sucursal" in notes or "tienda destino" in notes:
                 # Usar sucursal_destino_propuesto como principal, fallback a nombre_sucursal_destino
                 sucursal_name = error.sucursal_destino_propuesto or error.nombre_sucursal_destino
-                sucursales_destino_faltantes[sucursal_name].append(error.id)
+                # Verificar si está ignorado
+                if sucursal_name and sucursal_name in sucursales_ignoradas:
+                    ids_to_ignore.append(error.id)
+                else:
+                    sucursales_destino_faltantes[sucursal_name].append(error.id)
             # Detectar errores de Producto
             elif "Producto" in notes or "producto" in notes:
                 product_code = error.sku
@@ -368,6 +405,13 @@ class SalidaErrorResolverView(View):
             else:
                 # Otros errores
                 otros_errores[notes[:100]].append(error.id)
+        
+        # Marcar registros como ignorados si su nombre está en la lista de ignorados
+        if ids_to_ignore:
+            Salida.objects.filter(id__in=ids_to_ignore).update(
+                normalize_status="ignored",
+                normalize_notes="Ignorado por configuración de biblioteca"
+            )
         
         existing_cedis = list(Cendis.objects.values_list('origin', flat=True))
         existing_sucursales = list(Sucursal.objects.values_list('name', flat=True))

@@ -1,23 +1,31 @@
 <!DOCTYPE html>
 {% load dict_extras %}
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Resolver Errores - Salidas</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: #ffffff;
             color: #2c2c2c;
             line-height: 1.6;
         }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 0 24px 48px 24px;
         }
+
         header {
             background: #ffffff;
             border-bottom: 2px solid #dc0000;
@@ -25,67 +33,249 @@
             margin-bottom: 48px;
             box-shadow: 0 2px 8px rgba(220, 0, 0, 0.08);
         }
-        h1 { 
+
+        h1 {
             font-size: 42px;
             font-weight: 300;
             color: #dc0000;
             margin-bottom: 32px;
             letter-spacing: -0.5px;
         }
-        .nav { 
-            display: flex; 
+
+        .nav {
+            display: flex;
             gap: 32px;
             align-items: center;
             flex-wrap: wrap;
         }
-        .nav a { 
+
+        .nav a {
             color: #2c2c2c;
-            text-decoration: none; 
+            text-decoration: none;
             font-weight: 500;
             font-size: 15px;
             padding: 8px 0;
             border-bottom: 2px solid transparent;
             transition: all 0.3s ease;
         }
-        .nav a:hover { 
+
+        .nav a:hover {
             color: #dc0000;
             border-bottom-color: #dc0000;
         }
-        .summary { background: #fff; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #c62828; }
-        .error-group { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .error-group h3 { margin-top: 0; color: #c62828; border-bottom: 2px solid #eee; padding-bottom: 8px; }
-        .error-item { background: #f9f9f9; padding: 16px; margin-bottom: 16px; border-radius: 6px; border-left: 3px solid #ff9800; }
-        .error-item strong { color: #d84315; font-size: 16px; }
-        .error-item .count { background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px; }
-        .suggestions { margin-top: 12px; padding: 12px; background: #e3f2fd; border-radius: 4px; }
-        .suggestions h4 { margin: 0 0 8px 0; color: #1565c0; font-size: 14px; }
-        .suggestion-item { display: inline-block; background: #fff; padding: 6px 12px; margin: 4px; border-radius: 4px; border: 1px solid #90caf9; cursor: pointer; }
-        .suggestion-item:hover { background: #bbdefb; }
-        .actions { margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; }
-        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
-        .btn-primary { background: #1976d2; color: white; }
-        .btn-primary:hover { background: #1565c0; }
-        .btn-secondary { background: #757575; color: white; }
-        .btn-secondary:hover { background: #616161; }
-        .btn-success { background: #388e3c; color: white; }
-        .btn-success:hover { background: #2e7d32; }
-        .btn-danger { background: #d32f2f; color: white; }
-        .btn-danger:hover { background: #c62828; }
-        .form-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-        .form-inline input, .form-inline select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        .form-inline input { flex: 1; min-width: 200px; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal.active { display: flex; align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 24px; border-radius: 8px; max-width: 500px; width: 90%; }
-        .modal-content h3 { margin-top: 0; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; margin-bottom: 4px; font-weight: 600; color: #555; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .alert { padding: 12px; border-radius: 6px; margin-bottom: 16px; }
-        .alert-error { background: #ffebee; border-left: 4px solid #c62828; color: #c62828; }
-        .alert-success { background: #e8f5e9; border-left: 4px solid #388e3c; color: #2e7d32; }
+
+        .summary {
+            background: #fff;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+        }
+
+        .error-group {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-group h3 {
+            margin-top: 0;
+            color: #c62828;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+        }
+
+        .error-item {
+            background: #f9f9f9;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-radius: 6px;
+            border-left: 3px solid #ff9800;
+        }
+
+        .error-item strong {
+            color: #d84315;
+            font-size: 16px;
+        }
+
+        .error-item .count {
+            background: #ff9800;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .suggestions {
+            margin-top: 12px;
+            padding: 12px;
+            background: #e3f2fd;
+            border-radius: 4px;
+        }
+
+        .suggestions h4 {
+            margin: 0 0 8px 0;
+            color: #1565c0;
+            font-size: 14px;
+        }
+
+        .suggestion-item {
+            display: inline-block;
+            background: #fff;
+            padding: 6px 12px;
+            margin: 4px;
+            border-radius: 4px;
+            border: 1px solid #90caf9;
+            cursor: pointer;
+        }
+
+        .suggestion-item:hover {
+            background: #bbdefb;
+        }
+
+        .actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #1976d2;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1565c0;
+        }
+
+        .btn-secondary {
+            background: #757575;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #616161;
+        }
+
+        .btn-success {
+            background: #388e3c;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #2e7d32;
+        }
+
+        .btn-danger {
+            background: #d32f2f;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c62828;
+        }
+
+        .form-inline {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .form-inline input,
+        .form-inline select {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-inline input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            border-left: 4px solid #c62828;
+            color: #c62828;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            border-left: 4px solid #388e3c;
+            color: #2e7d32;
+        }
     </style>
 </head>
+
 <body>
     <header>
         <div class="container">
@@ -118,18 +308,20 @@
         <!-- CEDIS Origen Faltantes -->
         {% if cedis_origen_faltantes %}
         <div class="error-group">
-            <h3>🏭 CEDIS Origen (Almacenes) No Encontrados</h3>
+            <h3>🏭 CENDIS Origen (Almacenes) No Encontrados</h3>
             <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin-bottom: 20px;">
-                💡 <strong>Solución:</strong> Ve a <a href="/biblioteca/cedis/" style="color: #dc0000; font-weight: 600;">Biblioteca de CEDIS</a> para crear o mapear estos nombres.
+                💡 <strong>Solución:</strong> Ve a <a href="/biblioteca/cedis/"
+                    style="color: #dc0000; font-weight: 600;">Biblioteca de CENDIS</a> para crear o mapear estos
+                nombres.
             </div>
             {% for cedis_name, error_ids in cedis_origen_faltantes.items %}
             <div class="error-item">
                 <strong>{{ cedis_name|default:"(vacío)" }}</strong>
                 <span class="count">{{ error_ids|length }} registros afectados</span>
-                
+
                 <div class="actions">
                     <a href="/biblioteca/cedis/" class="btn-primary">
-                        🔧 Ir a Biblioteca de CEDIS
+                        🔧 Ir a Biblioteca de CENDIS
                     </a>
                 </div>
             </div>
@@ -142,13 +334,15 @@
         <div class="error-group">
             <h3>🏢 Sucursales/Tiendas Destino No Encontradas</h3>
             <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin-bottom: 20px;">
-                💡 <strong>Solución:</strong> Ve a <a href="/biblioteca/sucursales/" style="color: #dc0000; font-weight: 600;">Biblioteca de Sucursales</a> para crear o mapear estos nombres.
+                💡 <strong>Solución:</strong> Ve a <a href="/biblioteca/sucursales/"
+                    style="color: #dc0000; font-weight: 600;">Biblioteca de Sucursales</a> para crear o mapear estos
+                nombres.
             </div>
             {% for sucursal_name, error_ids in sucursales_destino_faltantes.items %}
             <div class="error-item">
                 <strong>{{ sucursal_name|default:"(vacío)" }}</strong>
                 <span class="count">{{ error_ids|length }} registros afectados</span>
-                
+
                 <div class="actions">
                     <a href="/biblioteca/sucursales/" class="btn-primary">
                         🔧 Ir a Biblioteca de Sucursales
@@ -167,12 +361,13 @@
             <div class="error-item">
                 <strong>{{ product_code|default:"(vacío)" }}</strong>
                 <span class="count">{{ error_ids|length }} registros</span>
-                
+
                 {% if product_code in product_suggestions and product_suggestions|get_item:product_code %}
                 <div class="suggestions">
                     <h4>💡 Sugerencias similares:</h4>
                     {% for suggestion in product_suggestions|get_item:product_code %}
-                    <span class="suggestion-item" onclick="selectProductSuggestion('{{ product_code }}', '{{ suggestion.code }}')">
+                    <span class="suggestion-item"
+                        onclick="selectProductSuggestion('{{ product_code }}', '{{ suggestion.code }}')">
                         {{ suggestion.code }} - {{ suggestion.name }}
                     </span>
                     {% endfor %}
@@ -192,7 +387,8 @@
                         {% for eid in error_ids %}
                         <input type="hidden" name="error_ids" value="{{ eid }}">
                         {% endfor %}
-                        <button type="submit" class="btn-danger" onclick="return confirm('¿Marcar estos {{ error_ids|length }} registros como omitidos?')">
+                        <button type="submit" class="btn-danger"
+                            onclick="return confirm('¿Marcar estos {{ error_ids|length }} registros como omitidos?')">
                             🗑️ Ignorar
                         </button>
                     </form>
@@ -206,7 +402,8 @@
         {% if otros_errores %}
         <div class="error-group">
             <h3>⚠️ Otros Errores</h3>
-            <p style="color: #666; margin-bottom: 16px;">Errores que no encajan en las categorías anteriores. Revisa los mensajes para identificar el problema.</p>
+            <p style="color: #666; margin-bottom: 16px;">Errores que no encajan en las categorías anteriores. Revisa los
+                mensajes para identificar el problema.</p>
             {% for error_msg, error_ids in otros_errores.items %}
             <div class="error-item">
                 <strong>Mensaje:</strong> {{ error_msg }}
@@ -218,7 +415,8 @@
                         {% for eid in error_ids %}
                         <input type="hidden" name="error_ids" value="{{ eid }}">
                         {% endfor %}
-                        <button type="submit" class="btn-danger" onclick="return confirm('¿Marcar estos {{ error_ids|length }} registros como omitidos?')">
+                        <button type="submit" class="btn-danger"
+                            onclick="return confirm('¿Marcar estos {{ error_ids|length }} registros como omitidos?')">
                             🗑️ Marcar como Omitido
                         </button>
                     </form>
@@ -231,7 +429,7 @@
         <!-- Modal: Crear CEDIS -->
         <div id="createCedisModal" class="modal">
             <div class="modal-content">
-                <h3>➕ Crear Nuevo CEDIS (Almacén)</h3>
+                <h3>➕ Crear Nuevo CENDIS (Almacén)</h3>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="create_cedis">
@@ -245,7 +443,8 @@
                     </div>
                     <div class="actions">
                         <button type="submit" class="btn-primary">Crear</button>
-                        <button type="button" class="btn-secondary" onclick="closeModal('createCedisModal')">Cancelar</button>
+                        <button type="button" class="btn-secondary"
+                            onclick="closeModal('createCedisModal')">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -265,7 +464,9 @@
                     </div>
                     <div class="form-group">
                         <label>Seleccionar CEDIS existente:</label>
-                        <select id="select_target_cedis" onchange="document.getElementById('map_target_cedis').value = this.value" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                        <select id="select_target_cedis"
+                            onchange="document.getElementById('map_target_cedis').value = this.value"
+                            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
                             <option value="">-- Seleccione un CEDIS --</option>
                             {% for cedis in all_cedis %}
                             <option value="{{ cedis }}">{{ cedis }}</option>
@@ -278,7 +479,8 @@
                     </div>
                     <div class="actions">
                         <button type="submit" class="btn-success">Mapear</button>
-                        <button type="button" class="btn-secondary" onclick="closeModal('mapCedisModal')">Cancelar</button>
+                        <button type="button" class="btn-secondary"
+                            onclick="closeModal('mapCedisModal')">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -301,7 +503,8 @@
                     </div>
                     <div class="actions">
                         <button type="submit" class="btn-primary">Crear</button>
-                        <button type="button" class="btn-secondary" onclick="closeModal('createSucursalModal')">Cancelar</button>
+                        <button type="button" class="btn-secondary"
+                            onclick="closeModal('createSucursalModal')">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -322,7 +525,9 @@
                     </div>
                     <div class="form-group">
                         <label>Seleccionar sucursal existente:</label>
-                        <select id="select_target_sucursal" onchange="document.getElementById('map_target_sucursal').value = this.value" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                        <select id="select_target_sucursal"
+                            onchange="document.getElementById('map_target_sucursal').value = this.value"
+                            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
                             <option value="">-- Seleccione una sucursal --</option>
                             {% for sucursal in all_sucursales %}
                             <option value="{{ sucursal }}">{{ sucursal }}</option>
@@ -335,7 +540,8 @@
                     </div>
                     <div class="actions">
                         <button type="submit" class="btn-success">Mapear</button>
-                        <button type="button" class="btn-secondary" onclick="closeModal('mapSucursalModal')">Cancelar</button>
+                        <button type="button" class="btn-secondary"
+                            onclick="closeModal('mapSucursalModal')">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -362,7 +568,8 @@
                     </div>
                     <div class="actions">
                         <button type="submit" class="btn-primary">Crear</button>
-                        <button type="button" class="btn-secondary" onclick="closeModal('createProductModal')">Cancelar</button>
+                        <button type="button" class="btn-secondary"
+                            onclick="closeModal('createProductModal')">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -386,7 +593,8 @@
                     </div>
                     <div class="actions">
                         <button type="submit" class="btn-success">Mapear</button>
-                        <button type="button" class="btn-secondary" onclick="closeModal('mapProductModal')">Cancelar</button>
+                        <button type="button" class="btn-secondary"
+                            onclick="closeModal('mapProductModal')">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -453,11 +661,12 @@
         }
 
         // Cerrar modal al hacer click fuera
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (event.target.classList.contains('modal')) {
                 event.target.classList.remove('active');
             }
         }
     </script>
 </body>
+
 </html>

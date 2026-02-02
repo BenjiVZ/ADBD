@@ -13,6 +13,8 @@ from .admin_maestros import AdminCedisView, AdminSucursalesView
 from .biblioteca_maestros import BibliotecaCedisView, BibliotecaSucursalesView
 from .correccion_cedis import CorreccionCedisView
 from .correccion_sucursales import CorreccionSucursalesView
+from .normalizar_todo import NormalizarTodoView
+from .limpiar_todo import LimpiarTodoView
 
 __all__ = [
 	"HomeView",
@@ -33,4 +35,7 @@ __all__ = [
 	"BibliotecaSucursalesView",
 	"CorreccionCedisView",
 	"CorreccionSucursalesView",
+	"NormalizarTodoView",
+	"LimpiarTodoView",
 ]
+

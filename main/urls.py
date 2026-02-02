@@ -19,6 +19,8 @@ from .views import (
     BibliotecaSucursalesView,
     CorreccionCedisView,
     CorreccionSucursalesView,
+    NormalizarTodoView,
+    LimpiarTodoView,
 )
 
 urlpatterns = [
@@ -43,4 +45,9 @@ urlpatterns = [
     # Corrección de datos crudos
     path("correccion/cedis/", CorreccionCedisView.as_view(), name="correccion_cedis"),
     path("correccion/sucursales/", CorreccionSucursalesView.as_view(), name="correccion_sucursales"),
+    # Normalizar todo de un golpe
+    path("normalizar/", NormalizarTodoView.as_view(), name="normalizar_todo"),
+    # Limpiar datos
+    path("limpiar/", LimpiarTodoView.as_view(), name="limpiar_todo"),
 ]
+

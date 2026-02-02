@@ -17,7 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from main.admin import salidas_admin, planificaciones_admin
+
 urlpatterns = [
+    # Admin sites personalizados (deben ir ANTES del admin principal)
+    path('salidas-admin/', salidas_admin.urls),
+    path('planificaciones-admin/', planificaciones_admin.urls),
+    # Admin principal
     path('admin/', admin.site.urls),
     path('', include('main.urls')),
 ]
